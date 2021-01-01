@@ -22,7 +22,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react"
 
 enum Direction {
   N,
@@ -76,7 +82,7 @@ const cryptoRandom = {
      * 5. Update the bit mask
      * 6. Use bit for random data
      */
-    const newBit = ((bitMask << 1) |1) & (~bitMask)
+    const newBit = ((bitMask << 1) | 1) & ~bitMask
     cryptoRandom.byteBitMask = bitMask | newBit
     cryptoRandom.arrayIndex = arrayIndex
 
@@ -86,10 +92,14 @@ const cryptoRandom = {
   data: new Uint32Array(randomDataArraySize),
 }
 
-const getRandomBoolean = window.crypto ? cryptoRandom.boolean : () => Math.random() > 0.5
+const getRandomBoolean = window.crypto
+  ? cryptoRandom.boolean
+  : () => Math.random() > 0.5
 
 const generateStaringPoints = (origin: XY = [0, 0]): Array<VertexRecord> => {
-  const startingPoint = getRandomBoolean() ? startingPointsNorthSouth : startingPointsEastWest
+  const startingPoint = getRandomBoolean()
+    ? startingPointsNorthSouth
+    : startingPointsEastWest
   return startingPoint.map(([startingPointX, startingPointY, direction]) => [
     origin[0] + startingPointX,
     origin[1] + startingPointY,
@@ -103,6 +113,9 @@ const drawBox = (
   stepSize: number,
   vertexRecord: VertexRecord,
 ): void => {
+  // Never have a zero step size, because the image disappears
+  if (stepSize <= 0) stepSize = 1
+
   const [vertexX, vertexY, from] = vertexRecord
 
   const targetCanvasVertexX = origin[0] + vertexX * stepSize
@@ -114,18 +127,32 @@ const drawBox = (
   switch (from) {
     case Direction.E:
       ctx.fillStyle = "#F00"
-      ctx.fillRect(targetCanvasVertexX, targetCanvasVertexY - stepSize, stepSize, 2 * stepSize) // Box
+      ctx.fillRect(
+        targetCanvasVertexX,
+        targetCanvasVertexY - stepSize,
+        stepSize,
+        2 * stepSize,
+      ) // Box
 
       if (drawArrow) {
         const arrowTipX = targetCanvasVertexX + (stepSize * 1) / 3
         const arrowTipY = targetCanvasVertexY
 
         ctx.beginPath()
-        ctx.moveTo(targetCanvasVertexX + (stepSize * 2) / 3, targetCanvasVertexY) // Arrow Body
+        ctx.moveTo(
+          targetCanvasVertexX + (stepSize * 2) / 3,
+          targetCanvasVertexY,
+        ) // Arrow Body
         ctx.lineTo(arrowTipX, arrowTipY)
-        ctx.moveTo(targetCanvasVertexX + stepSize / 2, targetCanvasVertexY + stepSize / 6) // Arrow Head 1
+        ctx.moveTo(
+          targetCanvasVertexX + stepSize / 2,
+          targetCanvasVertexY + stepSize / 6,
+        ) // Arrow Head 1
         ctx.lineTo(arrowTipX, arrowTipY)
-        ctx.moveTo(targetCanvasVertexX + stepSize / 2, targetCanvasVertexY - stepSize / 6) // Arrow Head 2
+        ctx.moveTo(
+          targetCanvasVertexX + stepSize / 2,
+          targetCanvasVertexY - stepSize / 6,
+        ) // Arrow Head 2
         ctx.lineTo(arrowTipX, arrowTipY)
         ctx.stroke()
       }
@@ -146,11 +173,20 @@ const drawBox = (
         const arrowTipY = targetCanvasVertexY - (stepSize * 1) / 3
 
         ctx.beginPath()
-        ctx.moveTo(targetCanvasVertexX, targetCanvasVertexY - (stepSize * 2) / 3) // Arrow Body
+        ctx.moveTo(
+          targetCanvasVertexX,
+          targetCanvasVertexY - (stepSize * 2) / 3,
+        ) // Arrow Body
         ctx.lineTo(arrowTipX, arrowTipY)
-        ctx.moveTo(targetCanvasVertexX - stepSize / 6, targetCanvasVertexY - stepSize / 2) // Arrow Head 1
+        ctx.moveTo(
+          targetCanvasVertexX - stepSize / 6,
+          targetCanvasVertexY - stepSize / 2,
+        ) // Arrow Head 1
         ctx.lineTo(arrowTipX, arrowTipY)
-        ctx.moveTo(targetCanvasVertexX + stepSize / 6, targetCanvasVertexY - stepSize / 2) // Arrow Head 2
+        ctx.moveTo(
+          targetCanvasVertexX + stepSize / 6,
+          targetCanvasVertexY - stepSize / 2,
+        ) // Arrow Head 2
         ctx.lineTo(arrowTipX, arrowTipY)
         ctx.stroke()
       }
@@ -158,18 +194,32 @@ const drawBox = (
       break
     case Direction.S:
       ctx.fillStyle = "#0F0"
-      ctx.fillRect(targetCanvasVertexX - stepSize, targetCanvasVertexY, 2 * stepSize, stepSize) // Box
+      ctx.fillRect(
+        targetCanvasVertexX - stepSize,
+        targetCanvasVertexY,
+        2 * stepSize,
+        stepSize,
+      ) // Box
 
       if (drawArrow) {
         const arrowTipX = targetCanvasVertexX
         const arrowTipY = targetCanvasVertexY + (stepSize * 1) / 3
 
         ctx.beginPath()
-        ctx.moveTo(targetCanvasVertexX, targetCanvasVertexY + (stepSize * 2) / 3) // Arrow Body
+        ctx.moveTo(
+          targetCanvasVertexX,
+          targetCanvasVertexY + (stepSize * 2) / 3,
+        ) // Arrow Body
         ctx.lineTo(arrowTipX, arrowTipY)
-        ctx.moveTo(targetCanvasVertexX + stepSize / 6, targetCanvasVertexY + stepSize / 2) // Arrow Head 1
+        ctx.moveTo(
+          targetCanvasVertexX + stepSize / 6,
+          targetCanvasVertexY + stepSize / 2,
+        ) // Arrow Head 1
         ctx.lineTo(arrowTipX, arrowTipY)
-        ctx.moveTo(targetCanvasVertexX - stepSize / 6, targetCanvasVertexY + stepSize / 2) // Arrow Head 2
+        ctx.moveTo(
+          targetCanvasVertexX - stepSize / 6,
+          targetCanvasVertexY + stepSize / 2,
+        ) // Arrow Head 2
         ctx.lineTo(arrowTipX, arrowTipY)
         ctx.stroke()
       }
@@ -188,11 +238,20 @@ const drawBox = (
         const arrowTipY = targetCanvasVertexY
 
         ctx.beginPath()
-        ctx.moveTo(targetCanvasVertexX - (stepSize * 2) / 3, targetCanvasVertexY) // Arrow Body
+        ctx.moveTo(
+          targetCanvasVertexX - (stepSize * 2) / 3,
+          targetCanvasVertexY,
+        ) // Arrow Body
         ctx.lineTo(arrowTipX, arrowTipY)
-        ctx.moveTo(targetCanvasVertexX - stepSize / 2, targetCanvasVertexY - stepSize / 6) // Arrow Head 1
+        ctx.moveTo(
+          targetCanvasVertexX - stepSize / 2,
+          targetCanvasVertexY - stepSize / 6,
+        ) // Arrow Head 1
         ctx.lineTo(arrowTipX, arrowTipY)
-        ctx.moveTo(targetCanvasVertexX - stepSize / 2, targetCanvasVertexY + stepSize / 6) // Arrow Head 2
+        ctx.moveTo(
+          targetCanvasVertexX - stepSize / 2,
+          targetCanvasVertexY + stepSize / 6,
+        ) // Arrow Head 2
         ctx.lineTo(arrowTipX, arrowTipY)
         ctx.stroke()
       }
@@ -206,20 +265,16 @@ const drawBox = (
   }
 }
 
-const initializeCircleState = (stepSize?: number): CircleState => {
+const initializeCircleState = (): CircleState => {
   const startingPoints = generateStaringPoints()
   return {
     collisionPoints: [],
     drawnPoints: startingPoints.map(([x, y]) => [x, y]),
     indexesToClear: {},
     recursionLevel: 1,
-    stepSize,
     vertexRecords: startingPoints,
   }
 }
-
-const getStepSize = (ctx: CanvasRenderingContext2D, recursionLevel: number): number =>
-  Math.floor((Math.min(ctx.canvas.width, ctx.canvas.height) - 1) / (recursionLevel * 2))
 
 interface CircleState {
   collisionPoints: Array<XY>
@@ -227,7 +282,6 @@ interface CircleState {
   indexesToClear: Record<string, boolean>
   previousCircleState?: CircleState
   recursionLevel: number
-  stepSize?: number
   vertexRecords: Array<VertexRecord>
 }
 
@@ -235,13 +289,52 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
   const canvas = useRef<HTMLCanvasElement>(null)
   const headerRef = useRef<HTMLDivElement>(null)
 
+  const [fixedStepSize, setFixedStepSize] = useState<undefined | number>(
+    undefined,
+  )
+
+  const getCurrentStepSize = useCallback((recursionLevel: number): number => {
+    const canvasElement = canvas.current
+    if (canvasElement) {
+      const ctx = canvasElement.getContext("2d")
+      if (ctx) {
+        return Math.floor(
+          (Math.min(ctx.canvas.width, ctx.canvas.height) - 1) /
+            (recursionLevel * 2),
+        )
+      }
+    }
+    return 1
+  }, [])
+
+  // useLayoutEffect(() => {
+  //   if (stepSize)
+  //   const canvasElement = canvas.current
+  //   if (canvasElement) {
+  //     const ctx = canvasElement.getContext("2d")
+  //     if (ctx) {
+  //       if (typeof currentStepSize === "number") {
+  //         setCircleState(remainingCircleState)
+  //       } else {
+  //         setCircleState({
+  //           ...remainingCircleState,
+  //           stepSize: getStepSize(ctx, circleState.recursionLevel),
+  //         })
+  //       }
+  //     }
+  //   getStepSize(ctx, circleState.recursionLevel)
+
+  // }, [])
+
   // Common state for all the UI
-  const [circleState, setCircleState] = useState<CircleState>(initializeCircleState)
+  const [circleState, setCircleState] = useState<CircleState>(
+    initializeCircleState,
+  )
   const restart = useCallback(() => {
     performance.clearMarks()
     performance.clearMeasures()
-    setCircleState(initializeCircleState(circleState.stepSize))
-  }, [circleState.stepSize])
+    setCircleState(initializeCircleState())
+  }, [])
   const undo = useCallback(() => {
     setCircleState((currentCircleState) =>
       currentCircleState.previousCircleState
@@ -252,33 +345,33 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
 
   const [showNewPoints, setShowNewPoints] = useState<number>(1)
   const toggleShowNewPoints = useCallback(
-    () => setShowNewPoints((currentHideDrawnPoints) => (currentHideDrawnPoints + 1) % 3),
+    () =>
+      setShowNewPoints(
+        (currentHideDrawnPoints) => (currentHideDrawnPoints + 1) % 3,
+      ),
     [],
   )
 
   const [showConflicts, setShowConflicts] = useState<number>(2)
   const toggleShowConflicts = useCallback(
-    () => setShowConflicts((currentShowConflicts) => (currentShowConflicts + 1) % 3),
+    () =>
+      setShowConflicts(
+        (currentShowConflicts) => (currentShowConflicts + 1) % 3,
+      ),
     [],
   )
 
   const toggleFixStepSize = useCallback(() => {
-    const { stepSize: currentStepSize, ...remainingCircleState } = circleState
-    const canvasElement = canvas.current
-    if (canvasElement) {
-      const ctx = canvasElement.getContext("2d")
-      if (ctx) {
-        if (typeof currentStepSize === "number") {
-          setCircleState(remainingCircleState)
-        } else {
-          setCircleState({
-            ...remainingCircleState,
-            stepSize: getStepSize(ctx, circleState.recursionLevel),
-          })
-        }
-      }
+    if (fixedStepSize) {
+      setFixedStepSize(undefined)
+    } else {
+      setFixedStepSize(getCurrentStepSize(circleState.recursionLevel))
     }
-  }, [circleState])
+  }, [circleState, fixedStepSize, getCurrentStepSize])
+
+  const toggleZoomOut = useCallback(() => {
+    setFixedStepSize(1)
+  }, [])
 
   // Take a single AC step
   const performStep = useCallback(
@@ -286,61 +379,67 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
       new Promise((resolve) => {
         setCircleState((previousCircleState) => {
           const newRecursionLevel = previousCircleState.recursionLevel + 1
+          const dataRowSize = newRecursionLevel * 2
+          const dataSize = dataRowSize ** 2
+
+          // Helper to create a non-colliding key from the recursion level
+
+          const getCollisionKey = (x: number, y: number): number =>
+            x + newRecursionLevel + (y + newRecursionLevel) * dataRowSize
+          const getPointFromCollisionKey = (collisionKey: number): XY => [
+            (collisionKey % dataRowSize) - newRecursionLevel,
+            Math.trunc(collisionKey / dataRowSize - newRecursionLevel),
+          ]
           const performanceMarkStart = `Started Calculations ${newRecursionLevel}}`
           performance.mark(performanceMarkStart)
 
-          // Helper to create a non-colliding key from the recursion level
-          const yValueOffset = Math.ceil(Math.log2(2 * newRecursionLevel))
-          const getCollisionKey = (x: number, y: number): number => x + (y << yValueOffset)
-          const generateCandidate = (x: number, y: number): { key: number; point: number[] } => ({
-            key: getCollisionKey(x, y),
-            point: [x, y],
-          })
-          const createdRecordVertecies: Record<string, XY> = {}
+          // const createdRecordTypedArray = new Uint8Array(dataSize)
+          const seenCollisionTypedArray = new Uint16Array(dataSize)
 
-          const seen: Record<string, number> = {}
+          const createdRecordVertecies: Record<string, boolean> = {}
+
+          // const seenCollisionKeyToIndex: Record<string, number> = {}
 
           // Clear Collisions from last run, and also calculate where new records will go
           const postCollisionRecords = previousCircleState.vertexRecords.filter(
             ([pointX, pointY, direction], index) => {
               // Mark the candidates for a new draw
-              let generateCandidateA: { key: number; point: XY }
-              let generateCandidateB: { key: number; point: XY }
+              let candidateCollisionA: number
+              let candidateCollisionB: number
 
               switch (direction) {
                 case Direction.E:
-                  generateCandidateA = generateCandidate(pointX + 1, pointY + 1)
-                  generateCandidateB = generateCandidate(pointX + 1, pointY - 1)
+                  candidateCollisionA = getCollisionKey(pointX + 1, pointY + 1)
+                  candidateCollisionB = getCollisionKey(pointX + 1, pointY - 1)
                   break
                 case Direction.N:
-                  generateCandidateA = generateCandidate(pointX + 1, pointY - 1)
-                  generateCandidateB = generateCandidate(pointX - 1, pointY - 1)
+                  candidateCollisionA = getCollisionKey(pointX + 1, pointY - 1)
+                  candidateCollisionB = getCollisionKey(pointX - 1, pointY - 1)
                   break
                 case Direction.S:
-                  generateCandidateA = generateCandidate(pointX + 1, pointY + 1)
-                  generateCandidateB = generateCandidate(pointX - 1, pointY + 1)
+                  candidateCollisionA = getCollisionKey(pointX + 1, pointY + 1)
+                  candidateCollisionB = getCollisionKey(pointX - 1, pointY + 1)
                   break
                 case Direction.W:
-                  generateCandidateA = generateCandidate(pointX - 1, pointY + 1)
-                  generateCandidateB = generateCandidate(pointX - 1, pointY - 1)
+                  candidateCollisionA = getCollisionKey(pointX - 1, pointY + 1)
+                  candidateCollisionB = getCollisionKey(pointX - 1, pointY - 1)
                   break
                 default:
                   throw new Error("Missing direction")
               }
 
               // Check if either of the candidates has been seen yet, and if so clear them out
-              if (seen[generateCandidateA.key]) {
-                delete createdRecordVertecies[generateCandidateA.key]
+              // Otherwise mark them as possibly valid creation targets
+              if (seenCollisionTypedArray[candidateCollisionA]) {
+                delete createdRecordVertecies[candidateCollisionA]
               } else {
-                // Save the records of the points drawn for the UI
-                createdRecordVertecies[generateCandidateA.key] = generateCandidateA.point
+                createdRecordVertecies[candidateCollisionA] = true
               }
 
-              if (seen[generateCandidateB.key]) {
-                delete createdRecordVertecies[generateCandidateB.key]
+              if (seenCollisionTypedArray[candidateCollisionB]) {
+                delete createdRecordVertecies[candidateCollisionB]
               } else {
-                // Save the records of the points drawn for the UI
-                createdRecordVertecies[generateCandidateB.key] = generateCandidateB.point
+                createdRecordVertecies[candidateCollisionB] = true
               }
 
               // Mark the current node as seen
@@ -348,7 +447,7 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
               if (createdRecordVertecies[itemCollisionKey]) {
                 delete createdRecordVertecies[itemCollisionKey]
               }
-              seen[itemCollisionKey] = index
+              seenCollisionTypedArray[itemCollisionKey] = 1
 
               // Keep the old vertext if it wasn't in collision state
               return !previousCircleState.indexesToClear[index]
@@ -359,27 +458,35 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
           performance.mark(performanceMarkAfterFirstLoop)
 
           // Perform Moves from this run
-          const postMoveRecords = postCollisionRecords.map(([vertexX, vertexY, direction]) => {
-            switch (direction) {
-              case Direction.E:
-                return [vertexX - 1, vertexY, direction]
-              case Direction.N:
-                return [vertexX, vertexY + 1, direction]
-              case Direction.S:
-                return [vertexX, vertexY - 1, direction]
-              case Direction.W:
-                return [vertexX + 1, vertexY, direction]
-              default:
-                throw new Error("Invalid Direction")
-            }
-          }) as Array<VertexRecord>
+          const postMoveRecords = postCollisionRecords.map(
+            ([vertexX, vertexY, direction]) => {
+              switch (direction) {
+                case Direction.E:
+                  return [vertexX - 1, vertexY, direction]
+                case Direction.N:
+                  return [vertexX, vertexY + 1, direction]
+                case Direction.S:
+                  return [vertexX, vertexY - 1, direction]
+                case Direction.W:
+                  return [vertexX + 1, vertexY, direction]
+                default:
+                  throw new Error("Invalid Direction")
+              }
+            },
+          ) as Array<VertexRecord>
 
           const performanceMarkAfterSecondLoop = `After Second Loop ${newRecursionLevel}}`
           performance.mark(performanceMarkAfterSecondLoop)
 
+          const drawnPoints = Object.keys(
+            createdRecordVertecies,
+          ).map((collisionKey) =>
+            getPointFromCollisionKey(Number(collisionKey) as number),
+          )
+
           // // Return the generated records
           const finalRecords = [...postMoveRecords].concat(
-            ...Object.values(createdRecordVertecies).map((point) => generateStaringPoints(point)),
+            ...drawnPoints.map((point) => generateStaringPoints(point)),
           )
 
           // Find Collisions for new record set
@@ -410,10 +517,18 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
           performance.mark(performanceMarkEnd)
 
           const measureWholeExecution = `Calculation Execution Time for ${newRecursionLevel}`
-          performance.measure(measureWholeExecution, performanceMarkStart, performanceMarkEnd)
+          performance.measure(
+            measureWholeExecution,
+            performanceMarkStart,
+            performanceMarkEnd,
+          )
 
           const measureFirstLoop = `First Loop for ${newRecursionLevel}`
-          performance.measure(measureFirstLoop, performanceMarkStart, performanceMarkAfterFirstLoop)
+          performance.measure(
+            measureFirstLoop,
+            performanceMarkStart,
+            performanceMarkAfterFirstLoop,
+          )
 
           const measureSecondLoop = `Second Loop for ${newRecursionLevel}`
           performance.measure(
@@ -447,11 +562,10 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
 
           return {
             collisionPoints: actualCollisionPoints,
-            drawnPoints: Object.values(createdRecordVertecies),
+            drawnPoints,
             indexesToClear,
             previousCircleState,
             recursionLevel: newRecursionLevel,
-            stepSize: previousCircleState.stepSize,
             vertexRecords: finalRecords,
           }
         })
@@ -461,11 +575,16 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
 
   // Handle looping
   const [loop, setLoop] = useState(0)
-  const toggleLoop = useCallback(() => setLoop((currentLoop) => (currentLoop > 0 ? 0 : 1)), [])
+  const toggleLoop = useCallback(
+    () => setLoop((currentLoop) => (currentLoop > 0 ? 0 : 1)),
+    [],
+  )
   useLayoutEffect(() => {
     if (loop) {
       const timeoutId = setTimeout(() => {
-        performStep().then(() => setLoop((currentLoop) => (currentLoop > 0 ? currentLoop + 1 : 0)))
+        performStep().then(() =>
+          setLoop((currentLoop) => (currentLoop > 0 ? currentLoop + 1 : 0)),
+        )
       }, 10)
       return () => clearTimeout(timeoutId)
     } else {
@@ -473,11 +592,28 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
     }
   }, [loop, performStep])
 
+  const [rewind, setRewind] = useState(0)
+  const toggleRewind = useCallback(
+    () => setRewind((currentRewind) => (currentRewind > 0 ? 0 : 1)),
+    [],
+  )
+  useLayoutEffect(() => {
+    console.log("rewind")
+    if (rewind) {
+      const timeoutId = setTimeout(() => {
+        undo()
+        setRewind((currentRewind) => currentRewind + 1)
+      }, 100)
+      return () => clearTimeout(timeoutId)
+    } else {
+      return
+    }
+  }, [loop, performStep, rewind, undo])
+
   const headerElement = headerRef.current
   const headerHeight = headerElement?.clientHeight ?? 0
 
   const [resizeNumber, setResizeNumber] = useState(0)
-
 
   useEffect(() => {
     const update = (): void => {
@@ -490,18 +626,17 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
 
   // Render the current step
   useEffect(() => {
-    // Force a redraw after resize
-    resizeNumber
-
     const canvasElement = canvas.current
-    if (canvasElement) {
+    // The extra condition forces a redraw after resize
+    if (canvasElement && resizeNumber >= 0) {
       const currentRecursionLevel = circleState.recursionLevel
       const performanceMarkStart = `Started Draw ${currentRecursionLevel}`
       performance.mark(performanceMarkStart)
       const ctx = canvasElement.getContext("2d")
 
       if (ctx) {
-        const stepSize = circleState.stepSize ?? getStepSize(ctx, circleState.recursionLevel)
+        const stepSize =
+          fixedStepSize ?? getCurrentStepSize(circleState.recursionLevel)
 
         const origin: XY = [ctx.canvas.width / 2, ctx.canvas.height / 2]
 
@@ -513,7 +648,8 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
 
         if (circleState.collisionPoints && showConflicts !== 0) {
           circleState.collisionPoints.forEach((drawPoint) => {
-            ctx.fillStyle = showConflicts === 1 ? "rgba(255,255,255,0.99)" : "rgba(0,0,0,0.9)"
+            ctx.fillStyle =
+              showConflicts === 1 ? "rgba(255,255,255,0.99)" : "rgba(0,0,0,0.9)"
 
             ctx.fillRect(
               origin[0] + (drawPoint[0] - 1) * stepSize,
@@ -527,7 +663,10 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
         // If we're going slowly, render the current candidates too
         if (circleState.drawnPoints && showNewPoints !== 0) {
           circleState.drawnPoints.forEach((drawPoint) => {
-            ctx.fillStyle = showNewPoints === 1 ? "rgba(255,220,220,0.80)" : "rgba(60,60,60,0.8)"
+            ctx.fillStyle =
+              showNewPoints === 1
+                ? "rgba(255,220,220,0.80)"
+                : "rgba(60,60,60,0.8)"
             ctx.fillRect(
               origin[0] + (drawPoint[0] - 1) * stepSize,
               origin[1] + (drawPoint[1] - 1) * stepSize,
@@ -548,38 +687,64 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
       console.log(
         JSON.stringify({
           recursionLevel: circleState.recursionLevel,
-          result: [{
-            [latestMeasure.name]: `${Math.round(latestMeasure.duration)}ms`,
-          }],
+          result: [
+            {
+              [latestMeasure.name]: `${Math.round(latestMeasure.duration)}ms`,
+            },
+          ],
         }),
       )
     }
-  }, [showNewPoints, circleState, showConflicts, resizeNumber])
-
-
+  }, [
+    fixedStepSize,
+    showNewPoints,
+    circleState,
+    showConflicts,
+    getCurrentStepSize,
+    resizeNumber,
+  ])
 
   // Render some controls, and the canvas with the circle
   return (
     <div style={{ width: "100%", height: "100%" }}>
       <div ref={headerRef}>
         <div>
-          <button onClick={restart}>Restart</button>
-          <button onClick={performStep}>Next</button>
-          <button onClick={undo}>Undo</button>
-          <button onClick={toggleLoop}>Loop</button>
+          {!rewind && !loop && <button onClick={restart}>Restart</button>}
+          {!rewind && !loop && <button onClick={performStep}>Next</button>}
+          {!rewind && !loop && <button onClick={undo}>Undo</button>}
+          {!rewind && (
+            <button onClick={toggleLoop}>
+              {loop ? "Stop Loop" : "Start Loop"}
+            </button>
+          )}
+          {!loop && (
+            <button onClick={toggleRewind}>
+              {rewind ? "Stop Rewind" : "Start Rewind"}
+            </button>
+          )}
         </div>
         <div>
           <button onClick={toggleShowNewPoints}>
             New Records are{" "}
-            {showNewPoints === 0 ? "Not Highlighted" : showNewPoints === 1 ? "Bright" : "Dark"}
+            {showNewPoints === 0
+              ? "Not Highlighted"
+              : showNewPoints === 1
+              ? "Bright"
+              : "Dark"}
           </button>
           <button onClick={toggleShowConflicts}>
             Conflicts are{" "}
-            {showConflicts === 0 ? "Not Highlighted" : showConflicts === 1 ? "Bright" : "Dark"}
+            {showConflicts === 0
+              ? "Not Highlighted"
+              : showConflicts === 1
+              ? "Bright"
+              : "Dark"}
           </button>
           <button onClick={toggleFixStepSize}>
-            Zoom Level {circleState.stepSize ? `${circleState.stepSize}px` : "Not Fixed"}
+            Zoom Level{" "}
+            {fixedStepSize === undefined ? "Not Fixed" : `${fixedStepSize}px`}
           </button>
+          <button onClick={toggleZoomOut}>Zoom Out</button>
         </div>
       </div>
       <canvas
