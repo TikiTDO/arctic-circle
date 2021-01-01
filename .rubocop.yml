@@ -1,0 +1,494 @@
+require:
+  - rubocop-performance
+
+AllCops:
+  SuggestExtensions: false
+
+Layout/AccessModifierIndentation:
+  Enabled: true
+  EnforcedStyle: outdent
+
+Layout/ArgumentAlignment:
+  Enabled: true
+  EnforcedStyle: with_fixed_indentation
+  IndentationWidth: 2
+
+Layout/BeginEndAlignment:
+  Enabled: true
+
+# Align `when` with `case`.
+Layout/CaseIndentation:
+  Enabled: true
+  EnforcedStyle: end
+  IndentOneStep: true
+
+# Align comments with method definitions.
+Layout/CommentIndentation:
+  Enabled: true
+
+Layout/ElseAlignment:
+  Enabled: true
+
+Layout/EmptyLineAfterMagicComment:
+  Enabled: true
+
+# In a regular class definition, no empty lines around the body.
+Layout/EmptyLinesAroundClassBody:
+  Enabled: true
+
+Layout/EmptyLinesAroundAttributeAccessor:
+  Enabled: true
+
+# In a regular method definition, no empty lines around the body.
+Layout/EmptyLinesAroundMethodBody:
+  Enabled: true
+
+# In a regular module definition, no empty lines around the body.
+Layout/EmptyLinesAroundModuleBody:
+  Enabled: true
+
+# Align `end` with the matching keyword or starting expression except for
+# assignments, where it should be aligned with the LHS.
+Layout/EndAlignment:
+  AutoCorrect: true
+  Enabled: true
+  EnforcedStyleAlignWith: variable
+
+Layout/EndOfLine:
+  Enabled: true
+  EnforcedStyle: lf
+
+Layout/FirstArgumentIndentation:
+  Enabled: true
+
+Layout/FirstArrayElementIndentation:
+  Enabled: true
+  EnforcedStyle: consistent
+
+Layout/FirstHashElementIndentation:
+  Enabled: true
+  EnforcedStyle: consistent
+
+Layout/HashAlignment:
+  Enabled: true
+  EnforcedLastArgumentHashStyle: ignore_implicit
+
+# Checks the indentation of the here document bodies.
+Layout/HeredocIndentation:
+  Enabled: true
+
+# Method definitions after `private` or `protected` isolated calls need one
+# extra level of indentation.
+Layout/IndentationConsistency:
+  Enabled: true
+  EnforcedStyle: indented_internal_methods
+
+# Two spaces, no tabs (for indentation).
+Layout/IndentationWidth:
+  Enabled: true
+
+Layout/LeadingCommentSpace:
+  Enabled: true
+
+Layout/LineLength:
+  Enabled: false
+
+Layout/MultilineMethodCallIndentation:
+  Enabled: true
+  EnforcedStyle: indented
+
+Layout/MultilineOperationIndentation:
+  Enabled: true
+  EnforcedStyle: indented
+
+Layout/ParameterAlignment:
+  Enabled: true
+  EnforcedStyle: with_fixed_indentation
+
+Layout/SpaceAfterColon:
+  Enabled: true
+
+Layout/SpaceAfterComma:
+  Enabled: true
+
+Layout/SpaceAroundEqualsInParameterDefault:
+  Enabled: true
+
+Layout/SpaceAroundKeyword:
+  Enabled: true
+
+Layout/SpaceAroundMethodCallOperator:
+  Enabled: true
+
+Layout/SpaceAroundOperators:
+  Enabled: true
+
+# Use `foo {}` not `foo{}`.
+Layout/SpaceBeforeBlockBraces:
+  Enabled: true
+
+Layout/SpaceBeforeComma:
+  Enabled: true
+
+Layout/SpaceBeforeFirstArg:
+  Enabled: true
+
+# Use `foo { bar }` not `foo {bar}`.
+Layout/SpaceInsideBlockBraces:
+  Enabled: true
+
+# Use `{ a: 1 }` not `{a:1}`.
+Layout/SpaceInsideHashLiteralBraces:
+  Enabled: true
+
+Layout/SpaceInsideParens:
+  Enabled: true
+
+# Blank lines should not have any spaces.
+Layout/TrailingEmptyLines:
+  Enabled: true
+
+# No trailing whitespace.
+Layout/TrailingWhitespace:
+  Enabled: true
+
+Lint/BinaryOperatorWithIdenticalOperands:
+  Enabled: true
+
+Lint/ConstantDefinitionInBlock:
+  Enabled: true
+
+Lint/DeprecatedOpenSSLConstant:
+  Enabled: true
+
+# Checks that there are no repeated bodies within if/unless, case-when and rescue constructs
+Lint/DuplicateBranch: # (new in 1.3)
+  Enabled: true
+
+Lint/DuplicateElsifCondition:
+  Enabled: true
+
+# Checks for duplicate elements in Regexp character classes
+Lint/DuplicateRegexpCharacterClassElement: # (new in 1.1)
+  Enabled: true
+
+Lint/DuplicateRequire:
+  Enabled: true
+
+Lint/DuplicateRescueException:
+  Enabled: true
+
+# Checks for blocks without a body
+Lint/EmptyBlock: # (new in 1.1)
+  Enabled: true
+
+# Checks for classes and metaclasses without a body
+Lint/EmptyClass: # (new in 1.3)
+  Enabled: true
+
+Lint/EmptyConditionalBody:
+  Enabled: true
+
+Lint/EmptyFile:
+  Enabled: true
+
+Lint/FloatComparison:
+  Enabled: true
+
+Lint/IdentityComparison:
+  Enabled: true
+
+Lint/MissingSuper:
+  Enabled: true
+
+# Checks for the presence of a return inside a begin..end block in assignment contexts
+Lint/NoReturnInBeginEndBlocks: # (new in 1.2)
+  Enabled: true
+
+# Don't raise the Exception class
+Lint/RaiseException:
+  Enabled: true
+
+Lint/MixedRegexpCaptureTypes:
+  Enabled: true
+
+# Use my_method(my_arg) not my_method( my_arg ) or my_method my_arg.
+Lint/RequireParentheses:
+  Enabled: true
+
+Lint/OutOfRangeRegexpRef:
+  Enabled: true
+
+Lint/SelfAssignment:
+  Enabled: true
+
+# Don't allow structs to override its built-in methods
+Lint/StructNewOverride:
+  Enabled: true
+
+# Ensures that to_enum/enum_for, called for the current method, has correct arguments
+Lint/ToEnumArguments: # (new in 1.1)
+  Enabled: true
+
+Lint/TopLevelReturnWithArgument:
+  Enabled: true
+
+Lint/TrailingCommaInAttributeDeclaration:
+  Enabled: true
+
+# Checks for a block that is known to need more positional block arguments than are given (by default this is configured for Enumerable methods needing 2 arguments)
+Lint/UnexpectedBlockArity: # (new in 1.5)
+  Enabled: true
+
+# Looks for reduce or inject blocks where the value returned (implicitly or explicitly) does not include the accumulator
+Lint/UnmodifiedReduceAccumulator: # (new in 1.1)
+  Enabled: true
+
+Lint/UnreachableLoop:
+  Enabled: true
+
+# Checks for useless method definitions, specifically: empty constructors and methods just delegating to super
+Lint/UselessMethodDefinition: # (new in 0.90)
+  Enabled: true
+
+Lint/UselessTimes:
+  Enabled: true
+
+Metrics:
+  Enabled: false
+
+Naming/PredicateName:
+  Enabled: false
+
+Performance/AncestorsInclude:
+  Enabled: false
+
+Performance/ArraySemiInfiniteRangeSlice: # (new in 1.9)
+  Enabled: true
+
+Performance/BigDecimalWithNumericArgument:
+  Enabled: true
+
+Performance/BlockGivenWithExplicitBlock: # (new in 1.9)
+  Enabled: true
+
+Performance/CollectionLiteralInLoop: # (new in 1.8)
+  Enabled: true
+
+Performance/ConstantRegexp: # (new in 1.9)
+  Enabled: true
+
+Performance/MethodObjectAsBlock: # (new in 1.9)
+  Enabled: true
+
+Performance/RedundantSortBlock:
+  Enabled: true
+
+Performance/RedundantStringChars:
+  Enabled: true
+
+Performance/ReverseFirst:
+  Enabled: true
+
+Performance/SortReverse:
+  Enabled: true
+
+Performance/Squeeze:
+  Enabled: true
+
+Performance/StringInclude:
+  Enabled: true
+
+# Identifies places where custom code finding the sum of elements in some Enumerable object can be replaced by Enumerable#sum method
+Performance/Sum: # (new in 1.8)
+  Enabled: true
+
+Style/AccessorGrouping:
+  Enabled: true
+
+# Prefer &&/|| over and/or.
+Style/AndOr:
+  Enabled: true
+
+# Identifies places where do_something(*args, &block) can be replaced by do_something(…​)
+Style/ArgumentsForwarding: # (new in 1.1)
+  Enabled: true
+
+Style/ArrayCoercion:
+  Enabled: true
+
+Style/BisectedAttrAccessor:
+  Enabled: true
+
+Style/CaseLikeIf:
+  Enabled: true
+
+Style/ClassAndModuleChildren:
+  Enabled: false
+
+# Checks for places where custom logic on rejection nils from arrays and hashes can be replaced with {Array,Hash}#{compact,compact!}
+Style/CollectionCompact: # (new in 1.2)
+  Enabled: true
+
+# Prefer Foo.method over Foo::method
+Style/ColonMethodCall:
+  Enabled: true
+
+# Checks for places where multiple consecutive loops over the same data can be combined into a single loop
+Style/CombinableLoops: # (new in 0.90)
+  Enabled: true
+
+Style/DefWithParentheses:
+  Enabled: true
+
+Style/Documentation:
+  Enabled: false
+
+# When using class_eval (or other eval) with string interpolation, add a comment block showing its appearance if interpolated (a practice used in Rails code)
+Style/DocumentDynamicEvalDefinition: # (new in 1.1)
+  Enabled: true
+
+Style/ExplicitBlockArgument:
+  Enabled: false
+
+Style/ExponentialNotation:
+  Enabled: true
+
+Style/FrozenStringLiteralComment:
+  Enabled: true
+  EnforcedStyle: never
+
+Style/GlobalStdStream:
+  Enabled: true
+
+Style/GuardClause:
+  Enabled: false
+
+Style/HashAsLastArrayItem:
+  Enabled: true
+
+# Enforce use of each_key and each_value hash methods
+Style/HashEachMethods:
+  Enabled: true
+
+Style/HashLikeCase:
+  Enabled: true
+
+# Use Ruby >= 1.9 syntax for hashes. Prefer { a: :b } over { :a => :b }.
+Style/HashSyntax:
+  Enabled: true
+
+# Enforce use of transform_keys to modify hash keys
+Style/HashTransformKeys:
+  Enabled: true
+
+# Enforce use of transform_values to modify hash values
+Style/HashTransformValues:
+  Enabled: true
+
+Style/IfUnlessModifier:
+  Enabled: false
+
+Style/KeywordParametersOrder:
+  Enabled: false
+
+Style/Lambda:
+  Enabled: false
+
+# Defining a method with parameters needs parentheses.
+Style/MethodDefParentheses:
+  Enabled: true
+
+Style/MultilineTernaryOperator:
+  Enabled: false
+
+Style/NegatedIf:
+  Enabled: false
+
+# Checks for uses of if-else and ternary operators with a negated condition which can be simplified by inverting condition and swapping branches
+Style/NegatedIfElseCondition: # (new in 1.2)
+  Enabled: true
+
+# Checks for lambdas that always return nil
+Style/NilLambda: # (new in 1.3)
+  Enabled: true
+
+Style/NumericLiterals:
+  Enabled: false
+
+Style/OptionalBooleanParameter:
+  Enabled: true
+
+Style/RaiseArgs:
+  Enabled: true
+  EnforcedStyle: compact
+
+# Checks for a redundant argument passed to certain methods
+Style/RedundantArgument: # (new in 1.4)
+  Enabled: true
+
+Style/RedundantAssignment:
+  Enabled: false
+
+Style/RedundantFetchBlock:
+  Enabled: true
+
+Style/RedundantFileExtensionInRequire:
+  Enabled: true
+
+# Checks for usage of the %q/%Q syntax when '' or "" would do.
+Style/RedundantPercentQ:
+  Enabled: true
+
+Style/RedundantRegexpCharacterClass:
+  Enabled: true
+
+Style/RedundantRegexpEscape:
+  Enabled: true
+
+Style/RedundantReturn:
+  Enabled: true
+  AllowMultipleReturnValues: true
+
+# Checks for places where redundant assignments are made for in place modification methods
+Style/RedundantSelfAssignment: # (new in 0.90)
+  Enabled: true
+
+Style/RegexpLiteral:
+  Enabled: true
+
+Style/Semicolon:
+  Enabled: true
+
+Style/SingleArgumentDig:
+  Enabled: true
+
+Style/SlicingWithRange:
+  Enabled: true
+
+Style/SoleNestedConditional:
+  Enabled: true
+
+Style/StringConcatenation:
+  Enabled: false
+
+# Check quotes usage according to lint rule below.
+Style/StringLiterals:
+  Enabled: true
+  EnforcedStyle: double_quotes
+
+# Enforces the use of shorthand-style swapping of 2 variables
+Style/SwapValues: # (new in 1.1)
+  Enabled: true
+
+Style/SymbolArray:
+  Enabled: true
+  MinSize: 0
+
+Style/TrivialAccessors:
+  Enabled: true
+  IgnoreClassMethods: true
+
+Style/WordArray:
+  Enabled: true
+  MinSize: 0

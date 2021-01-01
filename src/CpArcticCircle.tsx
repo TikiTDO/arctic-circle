@@ -386,15 +386,16 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
 
           const getCollisionKey = (x: number, y: number): number =>
             x + newRecursionLevel + (y + newRecursionLevel) * dataRowSize
+
           const getPointFromCollisionKey = (collisionKey: number): XY => [
             (collisionKey % dataRowSize) - newRecursionLevel,
-            Math.trunc(collisionKey / dataRowSize - newRecursionLevel),
+            Math.trunc(collisionKey / dataRowSize) - newRecursionLevel,
           ]
           const performanceMarkStart = `Started Calculations ${newRecursionLevel}}`
           performance.mark(performanceMarkStart)
 
           // const createdRecordTypedArray = new Uint8Array(dataSize)
-          const seenCollisionTypedArray = new Uint16Array(dataSize)
+          const seenCollisionTypedArray = new Uint8Array(dataSize)
 
           const createdRecordVertecies: Record<string, boolean> = {}
 
@@ -598,7 +599,6 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
     [],
   )
   useLayoutEffect(() => {
-    console.log("rewind")
     if (rewind) {
       const timeoutId = setTimeout(() => {
         undo()
@@ -617,7 +617,6 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
 
   useEffect(() => {
     const update = (): void => {
-      console.log("resize")
       setResizeNumber((currentResizeNumber) => currentResizeNumber + 1)
     }
     window.addEventListener("resize", update)
