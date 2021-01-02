@@ -37,8 +37,6 @@ enum Direction {
   W,
 }
 
-type XY = Array<number>
-
 type VertexRecord = Array<number> //[x: number, y: number, direction: Direction]
 
 // const startingPoints: Record<string, Array<VertexRecord>> = {
@@ -99,24 +97,26 @@ const getRandomBoolean = window.crypto
 const generateStaringPoints = (
   buffer: Int16Array,
   index: number,
-  origin: XY = [0, 0],
+  originX = 0,
+  originY = 0,
 ): void => {
   const startingPoint = getRandomBoolean()
     ? startingPointsNorthSouth
     : startingPointsEastWest
 
-  buffer[index] = origin[0] + startingPoint[0][0]
-  buffer[index + 1] = origin[1] + startingPoint[0][1]
+  buffer[index] = originX + startingPoint[0][0]
+  buffer[index + 1] = originY + startingPoint[0][1]
   buffer[index + 2] = startingPoint[0][2]
 
-  buffer[index + 3] = origin[0] + startingPoint[1][0]
-  buffer[index + 4] = origin[1] + startingPoint[1][1]
+  buffer[index + 3] = originX + startingPoint[1][0]
+  buffer[index + 4] = originY + startingPoint[1][1]
   buffer[index + 5] = startingPoint[1][2]
 }
 
 const drawBox = (
   ctx: CanvasRenderingContext2D,
-  origin: XY,
+  originX: number,
+  originY: number,
   stepSize: number,
   vertexX: number,
   vertexY: number,
@@ -125,15 +125,15 @@ const drawBox = (
   // Never have a zero step size, because the image disappears
   if (stepSize <= 0) stepSize = 1
 
-  const targetCanvasVertexX = origin[0] + vertexX * stepSize
-  const targetCanvasVertexY = origin[1] + vertexY * stepSize
+  const targetCanvasVertexX = originX + vertexX * stepSize
+  const targetCanvasVertexY = originY + vertexY * stepSize
 
   const drawArrow = stepSize > 10
 
   // The actual box
   switch (from) {
     case Direction.E:
-      ctx.fillStyle = "#F00"
+      ctx.fillStyle = "#8c1212"
       ctx.fillRect(
         targetCanvasVertexX,
         targetCanvasVertexY - stepSize,
@@ -167,7 +167,7 @@ const drawBox = (
       break
 
     case Direction.N:
-      ctx.fillStyle = "#00F"
+      ctx.fillStyle = "#1a1ad5"
       ctx.fillRect(
         targetCanvasVertexX - stepSize,
         targetCanvasVertexY - stepSize,
@@ -200,7 +200,7 @@ const drawBox = (
 
       break
     case Direction.S:
-      ctx.fillStyle = "#0F0"
+      ctx.fillStyle = "#17cb17"
       ctx.fillRect(
         targetCanvasVertexX - stepSize,
         targetCanvasVertexY,
@@ -232,7 +232,7 @@ const drawBox = (
       }
       break
     case Direction.W:
-      ctx.fillStyle = "#FF0"
+      ctx.fillStyle = "#caca6e"
       ctx.fillRect(
         targetCanvasVertexX - stepSize,
         targetCanvasVertexY - stepSize,
@@ -274,8 +274,8 @@ const drawBox = (
 
 interface CircleState {
   collisionXYArray: Int16Array
-  drawnXYArray: Array<XY>
-  collisionIndexesToClear: Uint8Array
+  generatedXYArray: Int16Array
+  collisionIndexesToRemove: Uint8Array
   previousCircleState?: CircleState
   recursionLevel: number
   preCollisionRecords: Int16Array
@@ -285,17 +285,38 @@ const initializeCircleState = (): CircleState => {
   const startingPoints = new Int16Array(2 * 3)
   generateStaringPoints(startingPoints, 0)
 
-  const drawnXYArray = [
-    [startingPoints[0], startingPoints[1]],
-    [startingPoints[3], startingPoints[4]],
-  ]
+  const generatedXYArray = new Int16Array([
+    startingPoints[0],
+    startingPoints[1],
+    startingPoints[3],
+    startingPoints[4],
+  ])
 
   return {
     collisionXYArray: new Int16Array(0),
-    drawnXYArray,
-    collisionIndexesToClear: new Uint8Array(0),
+    generatedXYArray,
+    collisionIndexesToRemove: new Uint8Array(0),
     recursionLevel: 1,
     preCollisionRecords: startingPoints,
+  }
+}
+
+const getRecursionHelpers = (recursionLevel: number) => {
+  const dataRowSize = recursionLevel * 2
+  const dataSize = dataRowSize ** 2 + dataRowSize
+
+  return {
+    dataSize,
+    /**
+     * Helper to create a non-colliding numeric key which can uniquely index into a memory blob
+     */
+    getCollisionKey: (x: number, y: number): number =>
+      x + recursionLevel + (y + recursionLevel) * dataRowSize,
+
+    getXFromCollisionKey: (collisionKey: number): number =>
+      (collisionKey % dataRowSize) - recursionLevel,
+    getYFromCollisionKey: (collisionKey: number): number =>
+      Math.trunc(collisionKey / dataRowSize) - recursionLevel,
   }
 }
 
@@ -358,6 +379,13 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
     [],
   )
 
+  // Whether to highlight new conflicts (0 = no, 1 = bright, 2 = dark)
+  const [saveMemory, setSaveMemory] = useState<boolean>(false)
+  const toggleSaveMemory = useCallback(
+    () => setSaveMemory((currentSaveMemory) => !currentSaveMemory),
+    [],
+  )
+
   // Don't auto-zoom in and and out
   const toggleFixStepSize = useCallback(() => {
     if (fixedStepSize) {
@@ -381,18 +409,13 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
           performance.clearMeasures()
 
           const newRecursionLevel = previousCircleState.recursionLevel + 1
-          const dataRowSize = newRecursionLevel * 2
-          const dataSize = dataRowSize ** 2 + dataRowSize
+          const {
+            dataSize,
+            getCollisionKey,
+            getXFromCollisionKey,
+            getYFromCollisionKey,
+          } = getRecursionHelpers(newRecursionLevel)
 
-          // Helper to create a non-colliding numeric key which can uniquely index into a memory blob
-          const getCollisionKey = (x: number, y: number): number =>
-            x + newRecursionLevel + (y + newRecursionLevel) * dataRowSize
-
-          // Convert from a collision key back into an (X, Y) point
-          const getPointFromCollisionKey = (collisionKey: number): XY => [
-            (collisionKey % dataRowSize) - newRecursionLevel,
-            Math.trunc(collisionKey / dataRowSize) - newRecursionLevel,
-          ]
           const performanceMarkStart = `Started Calculations ${newRecursionLevel}}`
           performance.mark(performanceMarkStart)
 
@@ -464,7 +487,7 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
 
             // Keep only the records that were not in a collision state
             if (
-              !previousCircleState.collisionIndexesToClear[
+              !previousCircleState.collisionIndexesToRemove[
                 preCollisionRecordsIndex
               ]
             ) {
@@ -529,36 +552,39 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
           performance.mark(performanceMarkAfterSecondLoop)
 
           // Find the XY coordinates for the points to be generated
-          const drawnXY = []
+          let drawnXyIndex = 0
+          const generatedXYArray = new Int16Array(dataSize)
           for (let i = 0; i < dataSize; i++) {
             if (collisionIndexesCreated[i]) {
-              drawnXY.push(getPointFromCollisionKey(i))
+              const pointX = getXFromCollisionKey(i)
+              const pointY = getYFromCollisionKey(i)
+              generatedXYArray[drawnXyIndex] = pointX
+              generatedXYArray[drawnXyIndex + 1] = pointY
+              drawnXyIndex = drawnXyIndex + 2
+
+              generateStaringPoints(finalRecords, finalIndex, pointX, pointY)
+              finalIndex = finalIndex + 6
             }
           }
 
-          // Generated new records into the result array
-          drawnXY.forEach((point) => {
-            generateStaringPoints(finalRecords, finalIndex, point)
-            finalIndex = finalIndex + 6
-          })
-
-          finalRecords = finalRecords.subarray(0, finalIndex)
+          finalRecords = finalRecords.slice(0, finalIndex)
 
           const performanceMarkAfterThirdLoop = `After Third Loop ${newRecursionLevel}}`
           performance.mark(performanceMarkAfterThirdLoop)
 
           // Find Collisions for new record set
-          let actualCollisionIndex = 0
-          const actualCollisionXY: Int16Array = new Int16Array(
+          let collisionXYArrayIndex = 0
+          const collisionXYArray: Int16Array = new Int16Array(
             (finalRecords.length / 3) * 2,
           )
-          const collisionIndexesToClear: Uint8Array = new Uint8Array(dataSize)
+          const collisionIndexesToRemove: Uint8Array = new Uint8Array(dataSize)
           // const newSeen: Record<string, number> = {}
 
           const seenCollisionsForNewCollisionKey = new Uint32Array(dataSize)
 
+          let futureCollisionIndex
           for (
-            let futureCollisionIndex = 0;
+            futureCollisionIndex = 0;
             futureCollisionIndex < finalRecords.length;
             futureCollisionIndex = futureCollisionIndex + 3
           ) {
@@ -569,11 +595,11 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
             const collisionKey = getCollisionKey(pointX, pointY)
             if (seenCollisionsForNewCollisionKey[collisionKey] !== 0) {
               // Found a collision
-              actualCollisionXY[actualCollisionIndex++] = pointX
-              actualCollisionXY[actualCollisionIndex++] = pointY
+              collisionXYArray[collisionXYArrayIndex++] = pointX
+              collisionXYArray[collisionXYArrayIndex++] = pointY
 
-              collisionIndexesToClear[futureCollisionIndex] = 1
-              collisionIndexesToClear[
+              collisionIndexesToRemove[futureCollisionIndex] = 1
+              collisionIndexesToRemove[
                 seenCollisionsForNewCollisionKey[collisionKey] - 1
               ] = 1
             }
@@ -642,19 +668,19 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
 
           // Return the new circle state
           return {
-            collisionXYArray: actualCollisionXY.subarray(
+            collisionXYArray: collisionXYArray.slice(0, collisionXYArrayIndex),
+            generatedXYArray: generatedXYArray.slice(0, drawnXyIndex),
+            collisionIndexesToRemove: collisionIndexesToRemove.slice(
               0,
-              actualCollisionIndex,
+              futureCollisionIndex,
             ),
-            drawnXYArray: drawnXY,
-            collisionIndexesToClear,
-            previousCircleState,
+            previousCircleState: saveMemory ? undefined : previousCircleState,
             recursionLevel: newRecursionLevel,
             preCollisionRecords: finalRecords,
           }
         })
       }),
-    [],
+    [saveMemory],
   )
 
   // Handle looping
@@ -686,7 +712,7 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
       const timeoutId = setTimeout(() => {
         undo()
         setRewind((currentRewind) => currentRewind + 1)
-      }, 100)
+      }, 50)
       return () => clearTimeout(timeoutId)
     } else {
       return
@@ -725,57 +751,122 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
           fixedStepSize ?? getCurrentStepSize(circleState.recursionLevel)
 
         // Center coordinates of the canvas
-        const origin: XY = [ctx.canvas.width / 2, ctx.canvas.height / 2]
+        const originX = ctx.canvas.width / 2
+        const originY = ctx.canvas.height / 2
 
         ctx.lineWidth = 1
         ctx.clearRect(0, 0, canvasElement.width, canvasElement.height)
         // Draw the main boxes
-        for (let i = 0; i < circleState.preCollisionRecords.length; i = i + 3) {
+        const preCollisionRecords = circleState.preCollisionRecords
+        for (let i = 0; i < preCollisionRecords.length; i = i + 3) {
           drawBox(
             ctx,
-            origin,
+            originX,
+            originY,
             stepSize,
-            circleState.preCollisionRecords[i],
-            circleState.preCollisionRecords[i + 1],
-            circleState.preCollisionRecords[i + 2],
+            preCollisionRecords[i],
+            preCollisionRecords[i + 1],
+            preCollisionRecords[i + 2],
           )
         }
 
-        if (circleState.collisionXYArray && showConflicts !== 0) {
+        const {
+          dataSize,
+          getCollisionKey,
+          getXFromCollisionKey,
+          getYFromCollisionKey,
+        } = getRecursionHelpers(circleState.recursionLevel)
+
+        const extraBoxes = new Uint8Array(dataSize)
+
+        // Set 1 for every conflict box
+        if (showConflicts) {
+          const collisionXYArray = circleState.collisionXYArray
           for (
             let collisionIndex = 0;
-            collisionIndex < circleState.collisionXYArray.length;
+            collisionIndex < collisionXYArray.length;
             collisionIndex = collisionIndex + 2
           ) {
-            const pointX = circleState.collisionXYArray[collisionIndex]
-            const pointY = circleState.collisionXYArray[collisionIndex + 1]
+            const pointX = collisionXYArray[collisionIndex]
+            const pointY = collisionXYArray[collisionIndex + 1]
 
-            ctx.fillStyle =
-              showConflicts === 1 ? "rgba(255,255,255,0.99)" : "rgba(0,0,0,0.9)"
+            // This points has a collision
+            extraBoxes[getCollisionKey(pointX, pointY)] |= 3 // 1 | 2
 
-            ctx.fillRect(
-              origin[0] + (pointX - 1) * stepSize,
-              origin[1] + (pointY - 1) * stepSize,
-              2 * stepSize,
-              2 * stepSize,
-            ) // Box around conflicts
+            // These points may itersect with a collision
+            extraBoxes[getCollisionKey(pointX + 1, pointY)] |= 2
+            extraBoxes[getCollisionKey(pointX - 1, pointY)] |= 2
+            extraBoxes[getCollisionKey(pointX, pointY + 1)] |= 2
+            extraBoxes[getCollisionKey(pointX, pointY - 1)] |= 2
           }
         }
 
-        // If we're going slowly, render the current candidates too
-        if (circleState.drawnXYArray && showNewPoints !== 0) {
-          circleState.drawnXYArray.forEach((drawPoint) => {
-            ctx.fillStyle =
-              showNewPoints === 1
-                ? "rgba(255,220,220,0.80)"
-                : "rgba(60,60,60,0.8)"
+        // Set 2 for every generated box
+        if (showNewPoints) {
+          const generatedXYArray = circleState.generatedXYArray
+          for (
+            let generatedIndex = 0;
+            generatedIndex < generatedXYArray.length;
+            generatedIndex = generatedIndex + 2
+          ) {
+            const pointX = generatedXYArray[generatedIndex]
+            const pointY = generatedXYArray[generatedIndex + 1]
+
+            // This points have a new record
+            extraBoxes[getCollisionKey(pointX, pointY)] |= 12 // 4 | 8
+
+            // These points may itersect with a new
+            extraBoxes[getCollisionKey(pointX + 1, pointY)] |= 8
+            extraBoxes[getCollisionKey(pointX - 1, pointY)] |= 8
+            extraBoxes[getCollisionKey(pointX, pointY + 1)] |= 8
+            extraBoxes[getCollisionKey(pointX, pointY - 1)] |= 8
+          }
+        }
+
+        // Draw all the generated boxes
+        for (let i = 0; i < extraBoxes.length; i++) {
+          const extraBoxRecord = extraBoxes[i]
+          if (!extraBoxRecord) {
+            continue
+          } else {
+            const pointX = getXFromCollisionKey(i)
+            const pointY = getYFromCollisionKey(i)
+
+            if (extraBoxRecord === 3) {
+              // Show box for only conflicts
+              ctx.fillStyle =
+                showConflicts === 1 ? "rgba(255,0,0,0.95)" : "rgba(60,0,0,0.7)"
+            } else if (extraBoxRecord === 12) {
+              // Show box for only generated
+              ctx.fillStyle =
+                showNewPoints === 1
+                  ? "rgba(255,255,255,0.95)"
+                  : "rgba(0,60,0,0.7)"
+            } else if ((extraBoxRecord & 4) | (extraBoxRecord & 1)) {
+              if (showConflicts === 1 && showNewPoints === 1) {
+                // Both want bright
+                ctx.fillStyle = "#9d1fb6"
+              } else if (
+                (showConflicts === 1 && showNewPoints === 2) ||
+                (showConflicts === 2 && showNewPoints === 1)
+              ) {
+                // Both can't decide
+                ctx.fillStyle = "#9d1fb6"
+              } else {
+                // Both want dark
+                ctx.fillStyle = "#FFF"
+              }
+            } else {
+              continue
+            }
+
             ctx.fillRect(
-              origin[0] + (drawPoint[0] - 1) * stepSize,
-              origin[1] + (drawPoint[1] - 1) * stepSize,
+              originX + (pointX - 1) * stepSize,
+              originY + (pointY - 1) * stepSize,
               2 * stepSize,
               2 * stepSize,
-            ) // Box around new records
-          })
+            ) // Extra box
+          }
         }
       }
 
@@ -813,19 +904,24 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
         <div>
           {!rewind && !loop && <button onClick={restart}>Restart</button>}
           {!rewind && !loop && <button onClick={performStep}>Next</button>}
-          {!rewind && !loop && <button onClick={undo}>Undo</button>}
+          {!rewind && !loop && !saveMemory && (
+            <button onClick={undo}>Undo</button>
+          )}
           {!rewind && (
             <button onClick={toggleLoop}>
               {loop ? "Stop Loop" : "Start Loop"}
             </button>
           )}
-          {!loop && (
+          {!loop && !saveMemory && (
             <button onClick={toggleRewind}>
               {rewind ? "Stop Rewind" : "Start Rewind"}
             </button>
           )}
         </div>
         <div>
+          <button onClick={toggleSaveMemory}>
+            Save Memory {saveMemory ? "ON" : "OFF"}
+          </button>
           <button onClick={toggleShowNewPoints}>
             New Records are{" "}
             {showNewPoints === 0
@@ -850,12 +946,12 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
         </div>
       </div>
       <canvas
-        height={window.innerHeight - headerHeight}
+        height={Math.min(window.outerHeight, window.innerHeight) - headerHeight}
         ref={canvas}
         style={{
           objectFit: "contain",
         }}
-        width={window.innerWidth}
+        width={Math.min(window.outerWidth, window.innerWidth)}
       />
     </div>
   )
