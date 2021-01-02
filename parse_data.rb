@@ -1,7 +1,7 @@
 require "json"
 require "csv"
 
-def do_thing
+def parse_data
   a = JSON.parse(File.read("a.json"))
 
   levels = {}
@@ -26,4 +26,4 @@ def do_thing
     end
   end
 end
-puts do_thing
+puts parse_data

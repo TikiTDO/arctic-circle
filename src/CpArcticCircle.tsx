@@ -96,27 +96,34 @@ const getRandomBoolean = window.crypto
   ? cryptoRandom.boolean
   : () => Math.random() > 0.5
 
-const generateStaringPoints = (origin: XY = [0, 0]): Array<VertexRecord> => {
+const generateStaringPoints = (
+  buffer: Int16Array,
+  index: number,
+  origin: XY = [0, 0],
+): void => {
   const startingPoint = getRandomBoolean()
     ? startingPointsNorthSouth
     : startingPointsEastWest
-  return startingPoint.map(([startingPointX, startingPointY, direction]) => [
-    origin[0] + startingPointX,
-    origin[1] + startingPointY,
-    direction,
-  ])
+
+  buffer[index] = origin[0] + startingPoint[0][0]
+  buffer[index + 1] = origin[1] + startingPoint[0][1]
+  buffer[index + 2] = startingPoint[0][2]
+
+  buffer[index + 3] = origin[0] + startingPoint[1][0]
+  buffer[index + 4] = origin[1] + startingPoint[1][1]
+  buffer[index + 5] = startingPoint[1][2]
 }
 
 const drawBox = (
   ctx: CanvasRenderingContext2D,
   origin: XY,
   stepSize: number,
-  vertexRecord: VertexRecord,
+  vertexX: number,
+  vertexY: number,
+  from: number,
 ): void => {
   // Never have a zero step size, because the image disappears
   if (stepSize <= 0) stepSize = 1
-
-  const [vertexX, vertexY, from] = vertexRecord
 
   const targetCanvasVertexX = origin[0] + vertexX * stepSize
   const targetCanvasVertexY = origin[1] + vertexY * stepSize
@@ -265,24 +272,31 @@ const drawBox = (
   }
 }
 
-const initializeCircleState = (): CircleState => {
-  const startingPoints = generateStaringPoints()
-  return {
-    collisionPoints: [],
-    drawnPoints: startingPoints.map(([x, y]) => [x, y]),
-    indexesToClear: {},
-    recursionLevel: 1,
-    vertexRecords: startingPoints,
-  }
-}
-
 interface CircleState {
-  collisionPoints: Array<XY>
-  drawnPoints: Array<XY>
-  indexesToClear: Record<string, boolean>
+  collisionXYArray: Int16Array
+  drawnXYArray: Array<XY>
+  collisionIndexesToClear: Uint8Array
   previousCircleState?: CircleState
   recursionLevel: number
-  vertexRecords: Array<VertexRecord>
+  preCollisionRecords: Int16Array
+}
+
+const initializeCircleState = (): CircleState => {
+  const startingPoints = new Int16Array(2 * 3)
+  generateStaringPoints(startingPoints, 0)
+
+  const drawnXYArray = [
+    [startingPoints[0], startingPoints[1]],
+    [startingPoints[3], startingPoints[4]],
+  ]
+
+  return {
+    collisionXYArray: new Int16Array(0),
+    drawnXYArray,
+    collisionIndexesToClear: new Uint8Array(0),
+    recursionLevel: 1,
+    preCollisionRecords: startingPoints,
+  }
 }
 
 const CpArcticCircle: React.FC<Record<string, never>> = () => {
@@ -307,32 +321,13 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
     return 1
   }, [])
 
-  // useLayoutEffect(() => {
-  //   if (stepSize)
-  //   const canvasElement = canvas.current
-  //   if (canvasElement) {
-  //     const ctx = canvasElement.getContext("2d")
-  //     if (ctx) {
-  //       if (typeof currentStepSize === "number") {
-  //         setCircleState(remainingCircleState)
-  //       } else {
-  //         setCircleState({
-  //           ...remainingCircleState,
-  //           stepSize: getStepSize(ctx, circleState.recursionLevel),
-  //         })
-  //       }
-  //     }
-  //   getStepSize(ctx, circleState.recursionLevel)
-
-  // }, [])
-
   // Common state for all the UI
   const [circleState, setCircleState] = useState<CircleState>(
     initializeCircleState,
   )
+
+  // Handler to start everything over
   const restart = useCallback(() => {
-    performance.clearMarks()
-    performance.clearMeasures()
     setCircleState(initializeCircleState())
   }, [])
   const undo = useCallback(() => {
@@ -343,7 +338,8 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
     )
   }, [])
 
-  const [showNewPoints, setShowNewPoints] = useState<number>(1)
+  // Whether to highlight new points (0 = no, 1 = bright, 2 = dark)
+  const [showNewPoints, setShowNewPoints] = useState<number>(0)
   const toggleShowNewPoints = useCallback(
     () =>
       setShowNewPoints(
@@ -352,7 +348,8 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
     [],
   )
 
-  const [showConflicts, setShowConflicts] = useState<number>(2)
+  // Whether to highlight new conflicts (0 = no, 1 = bright, 2 = dark)
+  const [showConflicts, setShowConflicts] = useState<number>(0)
   const toggleShowConflicts = useCallback(
     () =>
       setShowConflicts(
@@ -361,6 +358,7 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
     [],
   )
 
+  // Don't auto-zoom in and and out
   const toggleFixStepSize = useCallback(() => {
     if (fixedStepSize) {
       setFixedStepSize(undefined)
@@ -369,6 +367,7 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
     }
   }, [circleState, fixedStepSize, getCurrentStepSize])
 
+  // Set maximum zoom
   const toggleZoomOut = useCallback(() => {
     setFixedStepSize(1)
   }, [])
@@ -378,15 +377,18 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
     (): Promise<void> =>
       new Promise((resolve) => {
         setCircleState((previousCircleState) => {
+          performance.clearMarks()
+          performance.clearMeasures()
+
           const newRecursionLevel = previousCircleState.recursionLevel + 1
           const dataRowSize = newRecursionLevel * 2
-          const dataSize = dataRowSize ** 2
+          const dataSize = dataRowSize ** 2 + dataRowSize
 
-          // Helper to create a non-colliding key from the recursion level
-
+          // Helper to create a non-colliding numeric key which can uniquely index into a memory blob
           const getCollisionKey = (x: number, y: number): number =>
             x + newRecursionLevel + (y + newRecursionLevel) * dataRowSize
 
+          // Convert from a collision key back into an (X, Y) point
           const getPointFromCollisionKey = (collisionKey: number): XY => [
             (collisionKey % dataRowSize) - newRecursionLevel,
             Math.trunc(collisionKey / dataRowSize) - newRecursionLevel,
@@ -394,126 +396,195 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
           const performanceMarkStart = `Started Calculations ${newRecursionLevel}}`
           performance.mark(performanceMarkStart)
 
-          // const createdRecordTypedArray = new Uint8Array(dataSize)
-          const seenCollisionTypedArray = new Uint8Array(dataSize)
+          const collisionIndexesCreated = new Uint8Array(dataSize)
+          const collisionIndexesSeen = new Uint8Array(dataSize)
 
-          const createdRecordVertecies: Record<string, boolean> = {}
+          // The data array representing the pre collision state from last run
+          const preCollisionRecords = previousCircleState.preCollisionRecords
 
-          // const seenCollisionKeyToIndex: Record<string, number> = {}
-
-          // Clear Collisions from last run, and also calculate where new records will go
-          const postCollisionRecords = previousCircleState.vertexRecords.filter(
-            ([pointX, pointY, direction], index) => {
-              // Mark the candidates for a new draw
-              let candidateCollisionA: number
-              let candidateCollisionB: number
-
-              switch (direction) {
-                case Direction.E:
-                  candidateCollisionA = getCollisionKey(pointX + 1, pointY + 1)
-                  candidateCollisionB = getCollisionKey(pointX + 1, pointY - 1)
-                  break
-                case Direction.N:
-                  candidateCollisionA = getCollisionKey(pointX + 1, pointY - 1)
-                  candidateCollisionB = getCollisionKey(pointX - 1, pointY - 1)
-                  break
-                case Direction.S:
-                  candidateCollisionA = getCollisionKey(pointX + 1, pointY + 1)
-                  candidateCollisionB = getCollisionKey(pointX - 1, pointY + 1)
-                  break
-                case Direction.W:
-                  candidateCollisionA = getCollisionKey(pointX - 1, pointY + 1)
-                  candidateCollisionB = getCollisionKey(pointX - 1, pointY - 1)
-                  break
-                default:
-                  throw new Error("Missing direction")
-              }
-
-              // Check if either of the candidates has been seen yet, and if so clear them out
-              // Otherwise mark them as possibly valid creation targets
-              if (seenCollisionTypedArray[candidateCollisionA]) {
-                delete createdRecordVertecies[candidateCollisionA]
-              } else {
-                createdRecordVertecies[candidateCollisionA] = true
-              }
-
-              if (seenCollisionTypedArray[candidateCollisionB]) {
-                delete createdRecordVertecies[candidateCollisionB]
-              } else {
-                createdRecordVertecies[candidateCollisionB] = true
-              }
-
-              // Mark the current node as seen
-              const itemCollisionKey = getCollisionKey(pointX, pointY)
-              if (createdRecordVertecies[itemCollisionKey]) {
-                delete createdRecordVertecies[itemCollisionKey]
-              }
-              seenCollisionTypedArray[itemCollisionKey] = 1
-
-              // Keep the old vertext if it wasn't in collision state
-              return !previousCircleState.indexesToClear[index]
-            },
+          // The data array representing the state after clearing collisions
+          let postCollisionIndex = 0
+          const postCollisionRecords = new Int16Array(
+            preCollisionRecords.length,
           )
+          for (
+            let preCollisionRecordsIndex = 0;
+            preCollisionRecordsIndex < preCollisionRecords.length;
+            preCollisionRecordsIndex = preCollisionRecordsIndex + 3
+          ) {
+            const pointX = preCollisionRecords[preCollisionRecordsIndex]
+            const pointY = preCollisionRecords[preCollisionRecordsIndex + 1]
+            const direction = preCollisionRecords[preCollisionRecordsIndex + 2]
+
+            // Mark the candidates for a new draw
+            let candidateCollisionA: number
+            let candidateCollisionB: number
+
+            switch (direction) {
+              case Direction.E:
+                candidateCollisionA = getCollisionKey(pointX + 1, pointY + 1)
+                candidateCollisionB = getCollisionKey(pointX + 1, pointY - 1)
+                break
+              case Direction.N:
+                candidateCollisionA = getCollisionKey(pointX + 1, pointY - 1)
+                candidateCollisionB = getCollisionKey(pointX - 1, pointY - 1)
+                break
+              case Direction.S:
+                candidateCollisionA = getCollisionKey(pointX + 1, pointY + 1)
+                candidateCollisionB = getCollisionKey(pointX - 1, pointY + 1)
+                break
+              case Direction.W:
+                candidateCollisionA = getCollisionKey(pointX - 1, pointY + 1)
+                candidateCollisionB = getCollisionKey(pointX - 1, pointY - 1)
+                break
+              default:
+                throw new Error("Missing direction")
+            }
+
+            // Check if either of the candidates has been seen yet, and if so clear them out
+            // Otherwise mark them as possibly valid creation targets
+            if (collisionIndexesSeen[candidateCollisionA]) {
+              collisionIndexesCreated[candidateCollisionA] = 0
+            } else {
+              collisionIndexesCreated[candidateCollisionA] = 1
+            }
+
+            if (collisionIndexesSeen[candidateCollisionB]) {
+              collisionIndexesCreated[candidateCollisionB] = 0
+            } else {
+              collisionIndexesCreated[candidateCollisionB] = 1
+            }
+
+            // Mark the current node as seen
+            const itemCollisionKey = getCollisionKey(pointX, pointY)
+            if (collisionIndexesCreated[itemCollisionKey]) {
+              collisionIndexesCreated[itemCollisionKey] = 0
+            }
+            collisionIndexesSeen[itemCollisionKey] = 1
+
+            // Keep only the records that were not in a collision state
+            if (
+              !previousCircleState.collisionIndexesToClear[
+                preCollisionRecordsIndex
+              ]
+            ) {
+              postCollisionRecords[postCollisionIndex++] = pointX
+              postCollisionRecords[postCollisionIndex++] = pointY
+              postCollisionRecords[postCollisionIndex++] = direction
+            }
+          }
+
+          // const postCollisionRecords = previousCircleState.preCollisionRecords.filter(
+          //   ([pointX, pointY, direction], preCollisionIndex) => {
+          //     preCollisionIndex
+          //     const [pointX, pointY, direction]
+
+          //     // Keep the old vertext if it wasn't in collision state
+          //     return !previousCircleState.indexesToClear[preCollisionIndex]
+          //   },
+          // )
 
           const performanceMarkAfterFirstLoop = `After First Loop ${newRecursionLevel}}`
           performance.mark(performanceMarkAfterFirstLoop)
 
           // Perform Moves from this run
-          const postMoveRecords = postCollisionRecords.map(
-            ([vertexX, vertexY, direction]) => {
-              switch (direction) {
-                case Direction.E:
-                  return [vertexX - 1, vertexY, direction]
-                case Direction.N:
-                  return [vertexX, vertexY + 1, direction]
-                case Direction.S:
-                  return [vertexX, vertexY - 1, direction]
-                case Direction.W:
-                  return [vertexX + 1, vertexY, direction]
-                default:
-                  throw new Error("Invalid Direction")
-              }
-            },
-          ) as Array<VertexRecord>
+          let finalIndex = 0
+          let finalRecords = new Int16Array(dataSize * 3)
+
+          for (
+            finalIndex = 0;
+            finalIndex < postCollisionIndex;
+            finalIndex = finalIndex + 3
+          ) {
+            const vertexX = postCollisionRecords[finalIndex]
+            const vertexY = postCollisionRecords[finalIndex + 1]
+            const direction = postCollisionRecords[finalIndex + 2]
+            switch (direction) {
+              case Direction.E:
+                finalRecords[finalIndex] = vertexX - 1
+                finalRecords[finalIndex + 1] = vertexY
+                finalRecords[finalIndex + 2] = direction
+                break
+              case Direction.N:
+                finalRecords[finalIndex] = vertexX
+                finalRecords[finalIndex + 1] = vertexY + 1
+                finalRecords[finalIndex + 2] = direction
+                break
+              case Direction.S:
+                finalRecords[finalIndex] = vertexX
+                finalRecords[finalIndex + 1] = vertexY - 1
+                finalRecords[finalIndex + 2] = direction
+                break
+              case Direction.W:
+                finalRecords[finalIndex] = vertexX + 1
+                finalRecords[finalIndex + 1] = vertexY
+                finalRecords[finalIndex + 2] = direction
+                break
+              default:
+                throw new Error("Invalid Direction")
+            }
+          }
 
           const performanceMarkAfterSecondLoop = `After Second Loop ${newRecursionLevel}}`
           performance.mark(performanceMarkAfterSecondLoop)
 
-          const drawnPoints = Object.keys(
-            createdRecordVertecies,
-          ).map((collisionKey) =>
-            getPointFromCollisionKey(Number(collisionKey) as number),
-          )
-
-          // // Return the generated records
-          const finalRecords = [...postMoveRecords].concat(
-            ...drawnPoints.map((point) => generateStaringPoints(point)),
-          )
-
-          // Find Collisions for new record set
-          const potentialCollisionPoints: Array<XY> = []
-          const actualCollisionPoints: Array<XY> = []
-          const indexesToClear: Record<string, boolean> = {}
-          const newSeen: Record<string, number> = {}
-
-          finalRecords.forEach(([pointX, pointY], index) => {
-            potentialCollisionPoints.push([pointX, pointY])
-
-            // Store collision data for later
-            const collisionKey = getCollisionKey(pointX, pointY)
-            if (newSeen[collisionKey] !== undefined) {
-              actualCollisionPoints.push([pointX, pointY])
-              indexesToClear[newSeen[collisionKey]] = true
-              indexesToClear[index] = true
-            } else {
-              newSeen[getCollisionKey(pointX, pointY)] = index
+          // Find the XY coordinates for the points to be generated
+          const drawnXY = []
+          for (let i = 0; i < dataSize; i++) {
+            if (collisionIndexesCreated[i]) {
+              drawnXY.push(getPointFromCollisionKey(i))
             }
+          }
+
+          // Generated new records into the result array
+          drawnXY.forEach((point) => {
+            generateStaringPoints(finalRecords, finalIndex, point)
+            finalIndex = finalIndex + 6
           })
+
+          finalRecords = finalRecords.subarray(0, finalIndex)
 
           const performanceMarkAfterThirdLoop = `After Third Loop ${newRecursionLevel}}`
           performance.mark(performanceMarkAfterThirdLoop)
+
+          // Find Collisions for new record set
+          let actualCollisionIndex = 0
+          const actualCollisionXY: Int16Array = new Int16Array(
+            (finalRecords.length / 3) * 2,
+          )
+          const collisionIndexesToClear: Uint8Array = new Uint8Array(dataSize)
+          // const newSeen: Record<string, number> = {}
+
+          const seenCollisionsForNewCollisionKey = new Uint32Array(dataSize)
+
+          for (
+            let futureCollisionIndex = 0;
+            futureCollisionIndex < finalRecords.length;
+            futureCollisionIndex = futureCollisionIndex + 3
+          ) {
+            const pointX = finalRecords[futureCollisionIndex]
+            const pointY = finalRecords[futureCollisionIndex + 1]
+
+            // Store collision data for later
+            const collisionKey = getCollisionKey(pointX, pointY)
+            if (seenCollisionsForNewCollisionKey[collisionKey] !== 0) {
+              // Found a collision
+              actualCollisionXY[actualCollisionIndex++] = pointX
+              actualCollisionXY[actualCollisionIndex++] = pointY
+
+              collisionIndexesToClear[futureCollisionIndex] = 1
+              collisionIndexesToClear[
+                seenCollisionsForNewCollisionKey[collisionKey] - 1
+              ] = 1
+            }
+
+            seenCollisionsForNewCollisionKey[collisionKey] =
+              futureCollisionIndex + 1
+          }
+
           resolve()
 
+          // Log run performance
           const performanceMarkEnd = `Finished Calculations ${newRecursionLevel}}`
           performance.mark(performanceMarkEnd)
 
@@ -545,11 +616,19 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
             performanceMarkAfterThirdLoop,
           )
 
+          const measureFourthLoop = `Fourth Loop for ${newRecursionLevel}`
+          performance.measure(
+            measureFourthLoop,
+            performanceMarkAfterThirdLoop,
+            performanceMarkEnd,
+          )
+
           const performanceEntries = [
             ...performance.getEntriesByName(measureWholeExecution),
             ...performance.getEntriesByName(measureFirstLoop),
             ...performance.getEntriesByName(measureSecondLoop),
             ...performance.getEntriesByName(measureThirdLoop),
+            ...performance.getEntriesByName(measureFourthLoop),
           ]
 
           console.log(
@@ -561,13 +640,17 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
             }),
           )
 
+          // Return the new circle state
           return {
-            collisionPoints: actualCollisionPoints,
-            drawnPoints,
-            indexesToClear,
+            collisionXYArray: actualCollisionXY.subarray(
+              0,
+              actualCollisionIndex,
+            ),
+            drawnXYArray: drawnXY,
+            collisionIndexesToClear,
             previousCircleState,
             recursionLevel: newRecursionLevel,
-            vertexRecords: finalRecords,
+            preCollisionRecords: finalRecords,
           }
         })
       }),
@@ -625,6 +708,9 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
 
   // Render the current step
   useEffect(() => {
+    performance.clearMarks()
+    performance.clearMeasures()
+
     const canvasElement = canvas.current
     // The extra condition forces a redraw after resize
     if (canvasElement && resizeNumber >= 0) {
@@ -634,34 +720,51 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
       const ctx = canvasElement.getContext("2d")
 
       if (ctx) {
+        // How big a box is on the canvas
         const stepSize =
           fixedStepSize ?? getCurrentStepSize(circleState.recursionLevel)
 
+        // Center coordinates of the canvas
         const origin: XY = [ctx.canvas.width / 2, ctx.canvas.height / 2]
 
         ctx.lineWidth = 1
         ctx.clearRect(0, 0, canvasElement.width, canvasElement.height)
-        for (const vertexRecord of circleState.vertexRecords) {
-          drawBox(ctx, origin, stepSize, vertexRecord)
+        // Draw the main boxes
+        for (let i = 0; i < circleState.preCollisionRecords.length; i = i + 3) {
+          drawBox(
+            ctx,
+            origin,
+            stepSize,
+            circleState.preCollisionRecords[i],
+            circleState.preCollisionRecords[i + 1],
+            circleState.preCollisionRecords[i + 2],
+          )
         }
 
-        if (circleState.collisionPoints && showConflicts !== 0) {
-          circleState.collisionPoints.forEach((drawPoint) => {
+        if (circleState.collisionXYArray && showConflicts !== 0) {
+          for (
+            let collisionIndex = 0;
+            collisionIndex < circleState.collisionXYArray.length;
+            collisionIndex = collisionIndex + 2
+          ) {
+            const pointX = circleState.collisionXYArray[collisionIndex]
+            const pointY = circleState.collisionXYArray[collisionIndex + 1]
+
             ctx.fillStyle =
               showConflicts === 1 ? "rgba(255,255,255,0.99)" : "rgba(0,0,0,0.9)"
 
             ctx.fillRect(
-              origin[0] + (drawPoint[0] - 1) * stepSize,
-              origin[1] + (drawPoint[1] - 1) * stepSize,
+              origin[0] + (pointX - 1) * stepSize,
+              origin[1] + (pointY - 1) * stepSize,
               2 * stepSize,
               2 * stepSize,
             ) // Box around conflicts
-          })
+          }
         }
 
         // If we're going slowly, render the current candidates too
-        if (circleState.drawnPoints && showNewPoints !== 0) {
-          circleState.drawnPoints.forEach((drawPoint) => {
+        if (circleState.drawnXYArray && showNewPoints !== 0) {
+          circleState.drawnXYArray.forEach((drawPoint) => {
             ctx.fillStyle =
               showNewPoints === 1
                 ? "rgba(255,220,220,0.80)"
