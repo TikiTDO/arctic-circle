@@ -4,6 +4,7 @@ import CircleState, { Direction, directionCount } from "./CircleState"
 // import { getRecursionHelpers } from "./util/computeStep"
 // import renderState from "./util/renderState"
 
+// 64 MiB for each should do up to ~1k. Beyond that need to increase manually.
 const vertices = new Float32Array(2 ** 26) // Every set of 3 XYD coordinates gets 3 vergex configs
 const colors = new Float32Array(2 ** 26) // Every set of 3 XYD coordinates gets 3 color configs
 const indices = new Uint32Array(2 ** 26) // Every set of 3 XYD coordinates gets 6 indexes
