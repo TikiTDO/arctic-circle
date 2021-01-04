@@ -1,4 +1,4 @@
-import { Direction } from "../types/CircleState"
+import { Direction } from "../CircleState"
 
 const renderState = (
   ctx: CanvasRenderingContext2D,

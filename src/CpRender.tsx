@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react"
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import CircleState, { Direction } from "./types/CircleState"
+import CircleState, { Direction, directionCount } from "./CircleState"
 // import { getRecursionHelpers } from "./util/computeStep"
 // import renderState from "./util/renderState"
 
@@ -9,6 +9,51 @@ const colors = new Float32Array(2 ** 26) // Every set of 3 XYD coordinates gets 
 const indices = new Uint32Array(2 ** 26) // Every set of 3 XYD coordinates gets 6 indexes
 let indexLength = 0
 let vertexLength = 0
+
+// This is 4 Sets of 7 numbers which are used to provide direction config. Ordered alphabetically by variable name.
+const directionConfig = new Float32Array([
+  Direction.N,
+  0.5, // :blueColor
+  1, // :dynamicX
+  0, // :dynamicY
+  0.5, // :greenColor
+  1.0, // :redColor
+  0, // :secondX
+  -1, // :secondY
+  Direction.E,
+  0.5, // :blueColor
+  0, // :dynamicX
+  1, // :dynamicY
+  1.0, // :greenColor
+  0.5, // :redColor
+  1, // :secondX
+  0, // :secondY
+  Direction.S,
+  1.0, // :blueColor
+  -1, // :dynamicX
+  0, // :dynamicY
+  0.5, // :greenColor
+  0.5, // :redColor
+  0, // :secondX
+  1, // :secondY
+  Direction.W,
+  0.5, // :blueColor
+  0, // :dynamicX
+  -1, // :dynamicY
+  0.5, // :greenColor
+  0.5, // :redColor
+  -1, // :secondX
+  0, // :secondY
+])
+
+// The above array must have this number of entires per direction
+const directionConfigSize = 8
+if (directionConfig.length !== directionCount * directionConfigSize)
+  throw new Error(
+    `directionConfig size is wrong ${directionConfig.length} !== ${
+      directionCount * directionConfigSize
+    }`,
+  )
 
 const CpRender: React.FC<{
   circleState: CircleState
@@ -48,11 +93,9 @@ const CpRender: React.FC<{
         const currentRecursionLevel = circleState.recursionLevel * 1.0
         const performanceMarkStart = `Started Draw ${currentRecursionLevel}`
         performance.mark(performanceMarkStart)
-        // const indicesX = [0, 2, 3, 3, 1, 0,
-
-        // 4, 6, 7, 7, 5, 4]
 
         const divisor = currentRecursionLevel
+
         for (let i = 0; i < preCollisionRecords.length; i = i + 3) {
           const baseIndexRecord = i * 2
           const baseVertextRecord = i * 4
@@ -60,15 +103,6 @@ const CpRender: React.FC<{
 
           const pointX = preCollisionRecords[i]
           const pointY = preCollisionRecords[i + 1]
-
-          let dynamicX = 0
-          let dynamicY = 0
-          let secondX = 0
-          let secondY = 0
-
-          let redColor: number
-          let greenColor: number
-          let blueColor: number
 
           indices[baseIndexRecord] = baseVertextRecordIndex
           indices[baseIndexRecord + 1] = baseVertextRecordIndex + 1
@@ -80,95 +114,53 @@ const CpRender: React.FC<{
           indexLength = baseIndexRecord + 6
           vertexLength = baseVertextRecord + 4 * 3
 
-          switch (preCollisionRecords[i + 2]) {
-            case Direction.N:
-              dynamicX = 1
-              secondY = -1
-              redColor = 1.0
-              greenColor = 0.5
-              blueColor = 0.5
-              break
-            case Direction.E:
-              dynamicY = 1
-              secondX = 1
-              redColor = 0.5
-              greenColor = 1.0
-              blueColor = 0.5
-              break
-            case Direction.S:
-              dynamicX = -1
-              secondY = 1
-              redColor = 0.5
-              greenColor = 0.5
-              blueColor = 1.0
-              break
-            case Direction.W:
-              dynamicY = -1
-              secondX = -1
-              redColor = 0.5
-              greenColor = 0.5
-              blueColor = 0.5
-              break
-            default:
-              throw new Error("Invalid Direction")
-          }
+          // Reading config values for generating vertices and colors
+          const directionIndex =
+            preCollisionRecords[i + 2] * directionConfigSize + 1
 
-          for (let j = 0; j < 4; j++) {
-            // Every point gets converted into 4 vertecies, offset by the vertex being generated
-            const baseVertexIndex = baseVertextRecord + j * 3
+          const blueColor = directionConfig[directionIndex]
+          const dynamicX = directionConfig[directionIndex + 1]
+          const dynamicY = directionConfig[directionIndex + 2]
+          const greenColor = directionConfig[directionIndex + 3]
+          const redColor = directionConfig[directionIndex + 4]
+          const secondX = directionConfig[directionIndex + 5]
+          const secondY = directionConfig[directionIndex + 6]
 
-            colors[baseVertexIndex] = redColor
-            colors[baseVertexIndex + 1] = greenColor
-            colors[baseVertexIndex + 2] = blueColor
+          // The actual generation of the vertices for this record
+          let baseVertexIndex = baseVertextRecord
 
-            if (j == 0) {
-              vertices[baseVertexIndex] = (pointX + dynamicX) / divisor
-              vertices[baseVertexIndex + 1] = (pointY + dynamicY) / divisor
-            } else if (j == 1) {
-              vertices[baseVertexIndex] = (pointX - dynamicX) / divisor
-              vertices[baseVertexIndex + 1] = (pointY - dynamicY) / divisor
-            } else if (j == 2) {
-              vertices[baseVertexIndex] =
-                (pointX - dynamicX + secondX) / divisor
-              vertices[baseVertexIndex + 1] =
-                (pointY - dynamicY + secondY) / divisor
-            } else {
-              vertices[baseVertexIndex] =
-                (dynamicX + secondX + pointX) / divisor
-              vertices[baseVertexIndex + 1] =
-                (dynamicY + secondY + pointY) / divisor
-            }
+          vertices[baseVertexIndex] = (pointX + dynamicX) / divisor
+          vertices[baseVertexIndex + 1] = (pointY + dynamicY) / divisor
 
-            // vertices[baseVertexIndex + 2] = 0
-            // console.log({
-            //   pointX,
-            //   pointY,
-            //   // dynamicY,
-            //   // dynamicX,
-            //   vertexX: vertices[baseVertexIndex],
-            //   vertexY: vertices[baseVertexIndex + 1],
-            //   // jBit1,
-            //   // jBit2,
-            //   // divisor,
-            // })
-          }
+          colors[baseVertexIndex] = redColor
+          colors[baseVertexIndex + 1] = greenColor
+          colors[baseVertexIndex + 2] = blueColor
 
-          // if (i % 10000 === 0) {
-          //   console.log({
-          //     i,
-          //     pointX,
-          //     pointY,
-          //     data: vertices.subarray(
-          //       baseVertextRecord,
-          //       baseVertextRecord + 3 * 4,
-          //     ),
-          //     colors: colors.subarray(
-          //       baseVertextRecord,
-          //       baseVertextRecord + 3 * 4,
-          //     ),
-          //     index: indices.subarray(baseIndexRecord, baseIndexRecord + 5),
-          //   })
-          // }
+          baseVertexIndex = baseVertexIndex + 3
+          vertices[baseVertexIndex] = (pointX - dynamicX) / divisor
+          vertices[baseVertexIndex + 1] = (pointY - dynamicY) / divisor
+
+          colors[baseVertexIndex] = redColor
+          colors[baseVertexIndex + 1] = greenColor
+          colors[baseVertexIndex + 2] = blueColor
+
+          baseVertexIndex = baseVertexIndex + 3
+          vertices[baseVertexIndex] = (pointX - dynamicX + secondX) / divisor
+          vertices[baseVertexIndex + 1] =
+            (pointY - dynamicY + secondY) / divisor
+
+          colors[baseVertexIndex] = redColor
+          colors[baseVertexIndex + 1] = greenColor
+          colors[baseVertexIndex + 2] = blueColor
+
+          baseVertexIndex = baseVertexIndex + 3
+          vertices[baseVertexIndex] = (dynamicX + secondX + pointX) / divisor
+          vertices[baseVertexIndex + 1] =
+            (dynamicY + secondY + pointY) / divisor
+
+          colors[baseVertexIndex] = redColor
+          colors[baseVertexIndex + 1] = greenColor
+          colors[baseVertexIndex + 2] = blueColor
         }
 
         // Create an empty buffer object and store vertex data

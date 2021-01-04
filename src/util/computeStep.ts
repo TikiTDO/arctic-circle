@@ -1,5 +1,5 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import CircleState, { Direction } from "../types/CircleState"
+import CircleState, { Direction } from "../CircleState"
 import { getRandomBoolean } from "./randomProvider"
 
 type VertexRecord = Array<number> //[x: number, y: number, direction: Direction]

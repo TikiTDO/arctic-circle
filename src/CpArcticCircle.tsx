@@ -31,7 +31,7 @@ import React, {
 } from "react"
 import CpRender from "./CpRender"
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import CircleState from "./types/CircleState"
+import CircleState from "./CircleState"
 import computeStep, {
   // getRecursionHelpers,
   generateStaringPoints,
@@ -56,6 +56,8 @@ const initializeCircleState = (): CircleState => {
     preCollisionRecords: startingPoints,
   }
 }
+
+const showExtras = false
 
 const CpArcticCircle: React.FC<Record<string, never>> = () => {
   const headerRef = useRef<HTMLDivElement>(null)
@@ -116,7 +118,7 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
   )
 
   // Whether to highlight new conflicts (0 = no, 1 = bright, 2 = dark)
-  const [saveMemory, setSaveMemory] = useState<boolean>(false)
+  const [saveMemory, setSaveMemory] = useState<boolean>(true)
   const toggleSaveMemory = useCallback(
     () => setSaveMemory((currentSaveMemory) => !currentSaveMemory),
     [],
@@ -157,7 +159,7 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
           setLoop((currentLoop) => (currentLoop > 0 ? currentLoop + 1 : 0))
           return nextCircleState
         })
-      }, 10)
+      }, 20)
       return () => clearTimeout(timeoutId)
     } else {
       return
@@ -175,7 +177,7 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
       const timeoutId = setTimeout(() => {
         undo()
         setRewind((currentRewind) => currentRewind + 1)
-      }, 50)
+      }, 20)
       return () => clearTimeout(timeoutId)
     } else {
       return
@@ -191,9 +193,18 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
       <div ref={headerRef}>
         <div>
           {!rewind && !loop && <button onClick={restart}>Restart</button>}
+          <button onClick={toggleSaveMemory}>
+            {saveMemory ? "Enable Undo" : "Disable Undo (Saves Memory)"}
+          </button>
           {!rewind && !loop && <button onClick={performStep}>Next</button>}
+
           {!rewind && !loop && !saveMemory && (
             <button onClick={undo}>Undo</button>
+          )}
+          {!loop && !saveMemory && (
+            <button onClick={toggleRewind}>
+              {rewind ? "Stop Rewind" : "Start Rewind"}
+            </button>
           )}
           {!rewind && (
             <button
@@ -206,39 +217,36 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
               {loop ? "Stop Loop" : "Start Loop"}
             </button>
           )}
-          {!loop && !saveMemory && (
-            <button onClick={toggleRewind}>
-              {rewind ? "Stop Rewind" : "Start Rewind"}
-            </button>
-          )}
         </div>
-        <div>
-          <button onClick={toggleSaveMemory}>
-            Save Memory {saveMemory ? "ON" : "OFF"}
-          </button>
-          <button onClick={toggleShowNewPoints}>
-            New Records are{" "}
-            {showNewPoints === 0
-              ? "Not Highlighted"
-              : showNewPoints === 1
-              ? "Bright"
-              : "Dark"}
-          </button>
-          <button onClick={toggleShowConflicts}>
-            Conflicts are{" "}
-            {showConflicts === 0
-              ? "Not Highlighted"
-              : showConflicts === 1
-              ? "Bright"
-              : "Dark"}
-          </button>
-          {/* <button onClick={toggleFixStepSize}>
-            Zoom Level{" "}
-            {fixedStepSize === undefined ? "Not Fixed" : `${fixedStepSize}px`}
-          </button>
-          <button onClick={toggleZoomOut}>Zoom Out</button>
-          */}
-        </div>
+        {showExtras && (
+          <div>
+            <>
+              <button onClick={toggleShowNewPoints}>
+                New Records are{" "}
+                {showNewPoints === 0
+                  ? "Not Highlighted"
+                  : showNewPoints === 1
+                  ? "Bright"
+                  : "Dark"}
+              </button>
+              <button onClick={toggleShowConflicts}>
+                Conflicts are{" "}
+                {showConflicts === 0
+                  ? "Not Highlighted"
+                  : showConflicts === 1
+                  ? "Bright"
+                  : "Dark"}
+              </button>
+              {/* <button onClick={toggleFixStepSize}>
+                Zoom Level{" "}
+                {fixedStepSize === undefined
+                  ? "Not Fixed"
+                  : `${fixedStepSize}px`}
+              </button>
+              <button onClick={toggleZoomOut}>Zoom Out</button> */}
+            </>
+          </div>
+        )}
       </div>
       <CpRender
         circleState={circleState}
