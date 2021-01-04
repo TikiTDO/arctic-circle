@@ -94,6 +94,7 @@ const CpRender: React.FC<{
       const ctx = canvasElement.getContext("webgl")
 
       if (ctx) {
+        // Use integer indexes
         ctx.getExtension("OES_element_index_uint")
 
         // Create an empty buffer object and store vertex data
@@ -291,11 +292,18 @@ const CpRender: React.FC<{
         for (let i = 0; i < preCollisionRecords.length; i = i + 3) {
           const baseIndexRecord = i * 2
           const baseVertextRecord = i * 4
+
+          // Update globals
+          indexLength = baseIndexRecord + 6
+          vertexLength = baseVertextRecord + 4 * 3
+
           const baseVertextRecordIndex = baseVertextRecord / 3
 
+          // Get the point receiving the next record
           const pointX = preCollisionRecords[i]
           const pointY = preCollisionRecords[i + 1]
 
+          // Create the index record for the vertecies of this rectangle
           indices[baseIndexRecord] = baseVertextRecordIndex
           indices[baseIndexRecord + 1] = baseVertextRecordIndex + 1
           indices[baseIndexRecord + 2] = baseVertextRecordIndex + 2
@@ -303,10 +311,7 @@ const CpRender: React.FC<{
           indices[baseIndexRecord + 4] = baseVertextRecordIndex + 2
           indices[baseIndexRecord + 5] = baseVertextRecordIndex
 
-          indexLength = baseIndexRecord + 6
-          vertexLength = baseVertextRecord + 4 * 3
-
-          // Reading config values for generating vertices and colors
+          // Reading config values for the record direction used to generate vertices and colors
           const directionIndex =
             preCollisionRecords[i + 2] * directionConfigSize + 1
 
@@ -319,40 +324,40 @@ const CpRender: React.FC<{
           const secondY = directionConfig[directionIndex + 6]
 
           // The actual generation of the vertices for this record
-          let baseVertexIndex = baseVertextRecord
+          const baseVertexIndex = baseVertextRecord
 
           vertices[baseVertexIndex] = (pointX + dynamicX) / divisor
           vertices[baseVertexIndex + 1] = (pointY + dynamicY) / divisor
 
-          colors[baseVertexIndex] = redColor
-          colors[baseVertexIndex + 1] = greenColor
-          colors[baseVertexIndex + 2] = blueColor
+          vertices[baseVertexIndex + 3] = (pointX - dynamicX) / divisor
+          vertices[baseVertexIndex + 4] = (pointY - dynamicY) / divisor
 
-          baseVertexIndex = baseVertexIndex + 3
-          vertices[baseVertexIndex] = (pointX - dynamicX) / divisor
-          vertices[baseVertexIndex + 1] = (pointY - dynamicY) / divisor
-
-          colors[baseVertexIndex] = redColor
-          colors[baseVertexIndex + 1] = greenColor
-          colors[baseVertexIndex + 2] = blueColor
-
-          baseVertexIndex = baseVertexIndex + 3
-          vertices[baseVertexIndex] = (pointX - dynamicX + secondX) / divisor
-          vertices[baseVertexIndex + 1] =
+          vertices[baseVertexIndex + 6] =
+            (pointX - dynamicX + secondX) / divisor
+          vertices[baseVertexIndex + 7] =
             (pointY - dynamicY + secondY) / divisor
 
-          colors[baseVertexIndex] = redColor
-          colors[baseVertexIndex + 1] = greenColor
-          colors[baseVertexIndex + 2] = blueColor
-
-          baseVertexIndex = baseVertexIndex + 3
-          vertices[baseVertexIndex] = (dynamicX + secondX + pointX) / divisor
-          vertices[baseVertexIndex + 1] =
+          vertices[baseVertexIndex + 9] =
+            (dynamicX + secondX + pointX) / divisor
+          vertices[baseVertexIndex + 10] =
             (dynamicY + secondY + pointY) / divisor
 
-          colors[baseVertexIndex] = redColor
+          // Set the colors for the vertecies
+          colors[baseVertexIndex + 0] = redColor
           colors[baseVertexIndex + 1] = greenColor
           colors[baseVertexIndex + 2] = blueColor
+
+          colors[baseVertexIndex + 3] = redColor
+          colors[baseVertexIndex + 4] = greenColor
+          colors[baseVertexIndex + 5] = blueColor
+
+          colors[baseVertexIndex + 6] = redColor
+          colors[baseVertexIndex + 7] = greenColor
+          colors[baseVertexIndex + 8] = blueColor
+
+          colors[baseVertexIndex + 9] = redColor
+          colors[baseVertexIndex + 10] = greenColor
+          colors[baseVertexIndex + 11] = blueColor
         }
 
         // Create an empty buffer object and store vertex data
@@ -360,7 +365,7 @@ const CpRender: React.FC<{
         ctx.bufferData(
           ctx.ARRAY_BUFFER,
           vertices.subarray(0, vertexLength),
-          ctx.STATIC_DRAW,
+          ctx.STREAM_DRAW,
         )
 
         // Create an empty buffer object and store Index data
@@ -368,7 +373,7 @@ const CpRender: React.FC<{
         ctx.bufferData(
           ctx.ELEMENT_ARRAY_BUFFER,
           indices.subarray(0, indexLength),
-          ctx.STATIC_DRAW,
+          ctx.STREAM_DRAW,
         )
 
         // Create an empty buffer object and store color data
@@ -376,7 +381,7 @@ const CpRender: React.FC<{
         ctx.bufferData(
           ctx.ARRAY_BUFFER,
           colors.subarray(0, vertexLength),
-          ctx.STATIC_DRAW,
+          ctx.STREAM_DRAW,
         )
 
         //Draw the triangle
