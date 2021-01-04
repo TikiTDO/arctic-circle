@@ -529,14 +529,18 @@ const CpRender: React.FC<{
     }
   }, [])
 
+  const minWidth = Math.min(window.outerWidth, window.innerWidth)
+  const minHeight =
+    Math.min(window.outerHeight, window.innerHeight) - headerHeight
+
   return (
     <canvas
-      height={Math.min(window.outerHeight, window.innerHeight) - headerHeight}
+      height={Math.min(minWidth, minHeight)}
       ref={canvas}
       style={{
         objectFit: "contain",
       }}
-      width={Math.min(window.outerWidth, window.innerWidth)}
+      width={Math.min(minWidth, minHeight)}
     />
   )
 }
