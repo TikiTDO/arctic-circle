@@ -145,9 +145,7 @@ export const generateStaringPoints = (
   originX = 0,
   originY = 0,
 ): void => {
-  const startingPoint = getRandomBoolean()
-    ? startingPointsNorthSouth
-    : startingPointsEastWest
+  const startingPoint = getRandomBoolean() ? startingPointsNorthSouth : startingPointsEastWest
 
   buffer[index] = originX + startingPoint[0][0]
   buffer[index + 1] = originY + startingPoint[0][1]
@@ -165,9 +163,7 @@ interface RecursionHelpers {
   getYFromCollisionKey: (collisionKey: number) => number
 }
 
-export const getRecursionHelpers = (
-  recursionLevel: number,
-): RecursionHelpers => {
+export const getRecursionHelpers = (recursionLevel: number): RecursionHelpers => {
   const dataRowSize = recursionLevel * 2
   const dataSize = dataRowSize ** 2 + dataRowSize
 
@@ -188,10 +184,7 @@ export const getRecursionHelpers = (
 
 // Take a single AC step
 
-const computeStep = (
-  previousCircleState: CircleState,
-  saveMemory: boolean,
-): CircleState => {
+const computeStep = (previousCircleState: CircleState, saveMemory: boolean): CircleState => {
   performance.clearMarks()
   performance.clearMeasures()
 
@@ -271,9 +264,7 @@ const computeStep = (
     collisionIndexesSeen[itemCollisionKey] = 1
 
     // Keep only the records that were not in a collision state
-    if (
-      !previousCircleState.collisionIndexesToRemove[preCollisionRecordsIndex]
-    ) {
+    if (!previousCircleState.collisionIndexesToRemove[preCollisionRecordsIndex]) {
       postCollisionRecords[postCollisionIndex++] = pointX
       postCollisionRecords[postCollisionIndex++] = pointY
       postCollisionRecords[postCollisionIndex++] = direction
@@ -297,11 +288,7 @@ const computeStep = (
   let finalIndex = 0
   let finalRecords = new Int16Array(dataSize * 3)
 
-  for (
-    finalIndex = 0;
-    finalIndex < postCollisionIndex;
-    finalIndex = finalIndex + 3
-  ) {
+  for (finalIndex = 0; finalIndex < postCollisionIndex; finalIndex = finalIndex + 3) {
     const vertexX = postCollisionRecords[finalIndex]
     const vertexY = postCollisionRecords[finalIndex + 1]
     const direction = postCollisionRecords[finalIndex + 2]
@@ -357,9 +344,7 @@ const computeStep = (
 
   // Find Collisions for new record set
   let collisionXYArrayIndex = 0
-  const collisionXYArray: Int16Array = new Int16Array(
-    (finalRecords.length / 3) * 2,
-  )
+  const collisionXYArray: Int16Array = new Int16Array((finalRecords.length / 3) * 2)
   const collisionIndexesToRemove: Uint8Array = new Uint8Array(dataSize)
   // const newSeen: Record<string, number> = {}
 
@@ -382,9 +367,7 @@ const computeStep = (
       collisionXYArray[collisionXYArrayIndex++] = pointY
 
       collisionIndexesToRemove[futureCollisionIndex] = 1
-      collisionIndexesToRemove[
-        seenCollisionsForNewCollisionKey[collisionKey] - 1
-      ] = 1
+      collisionIndexesToRemove[seenCollisionsForNewCollisionKey[collisionKey] - 1] = 1
     }
 
     seenCollisionsForNewCollisionKey[collisionKey] = futureCollisionIndex + 1
@@ -395,18 +378,10 @@ const computeStep = (
   performance.mark(performanceMarkEnd)
 
   const measureWholeExecution = `Calculation Execution Time for ${newRecursionLevel}`
-  performance.measure(
-    measureWholeExecution,
-    performanceMarkStart,
-    performanceMarkEnd,
-  )
+  performance.measure(measureWholeExecution, performanceMarkStart, performanceMarkEnd)
 
   const measureFirstLoop = `First Loop for ${newRecursionLevel}`
-  performance.measure(
-    measureFirstLoop,
-    performanceMarkStart,
-    performanceMarkAfterFirstLoop,
-  )
+  performance.measure(measureFirstLoop, performanceMarkStart, performanceMarkAfterFirstLoop)
 
   const measureSecondLoop = `Second Loop for ${newRecursionLevel}`
   performance.measure(
@@ -423,11 +398,7 @@ const computeStep = (
   )
 
   const measureFourthLoop = `Fourth Loop for ${newRecursionLevel}`
-  performance.measure(
-    measureFourthLoop,
-    performanceMarkAfterThirdLoop,
-    performanceMarkEnd,
-  )
+  performance.measure(measureFourthLoop, performanceMarkAfterThirdLoop, performanceMarkEnd)
 
   const performanceEntries = [
     ...performance.getEntriesByName(measureWholeExecution),
@@ -450,10 +421,7 @@ const computeStep = (
   return {
     collisionXYArray: collisionXYArray.slice(0, collisionXYArrayIndex),
     generatedXYArray: generatedXYArray.slice(0, drawnXyIndex),
-    collisionIndexesToRemove: collisionIndexesToRemove.slice(
-      0,
-      futureCollisionIndex,
-    ),
+    collisionIndexesToRemove: collisionIndexesToRemove.slice(0, futureCollisionIndex),
     previousCircleState: saveMemory ? undefined : previousCircleState,
     recursionLevel: newRecursionLevel,
     preCollisionRecords: finalRecords,

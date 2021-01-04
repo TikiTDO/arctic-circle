@@ -38,6 +38,4 @@ const cryptoRandom = {
   data: new Uint32Array(randomDataArraySize),
 }
 
-export const getRandomBoolean = window.crypto
-  ? cryptoRandom.boolean
-  : () => Math.random() > 0.5
+export const getRandomBoolean = window.crypto ? cryptoRandom.boolean : () => Math.random() > 0.5

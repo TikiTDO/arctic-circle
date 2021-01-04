@@ -100,31 +100,19 @@ const CpRender: React.FC<{
         // Create an empty buffer object and store vertex data
         const vertexBuffer = ctx.createBuffer()
         ctx.bindBuffer(ctx.ARRAY_BUFFER, vertexBuffer)
-        ctx.bufferData(
-          ctx.ARRAY_BUFFER,
-          vertices.subarray(0, 2 * 3 * 4),
-          ctx.STATIC_DRAW,
-        )
+        ctx.bufferData(ctx.ARRAY_BUFFER, vertices.subarray(0, 2 * 3 * 4), ctx.STATIC_DRAW)
         ctx.bindBuffer(ctx.ARRAY_BUFFER, null)
 
         // Create an empty buffer object and store Index data
         const indexBuffer = ctx.createBuffer()
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, indexBuffer)
-        ctx.bufferData(
-          ctx.ELEMENT_ARRAY_BUFFER,
-          indices.subarray(0, 2 * 6),
-          ctx.STATIC_DRAW,
-        )
+        ctx.bufferData(ctx.ELEMENT_ARRAY_BUFFER, indices.subarray(0, 2 * 6), ctx.STATIC_DRAW)
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, null)
 
         // Create an empty buffer object and store color data
         const colorBuffer = ctx.createBuffer()
         ctx.bindBuffer(ctx.ARRAY_BUFFER, colorBuffer)
-        ctx.bufferData(
-          ctx.ARRAY_BUFFER,
-          colors.subarray(0, 2 * 3 * 4),
-          ctx.STATIC_DRAW,
-        )
+        ctx.bufferData(ctx.ARRAY_BUFFER, colors.subarray(0, 2 * 3 * 4), ctx.STATIC_DRAW)
 
         /*======================= Shaders =======================*/
 
@@ -150,9 +138,7 @@ const CpRender: React.FC<{
           // Compile the vertex shader
           ctx.compileShader(vertShader)
         } else {
-          throw new Error(
-            "const vertShader = ctx.createShader(ctx.VERTEX_SHADER)",
-          )
+          throw new Error("const vertShader = ctx.createShader(ctx.VERTEX_SHADER)")
         }
 
         // fragment shader source code
@@ -175,9 +161,7 @@ const CpRender: React.FC<{
           // Compile the fragmentt shader
           ctx.compileShader(fragShader)
         } else {
-          throw new Error(
-            "const fragShader = ctx.createShader(ctx.FRAGMENT_SHADER)",
-          )
+          throw new Error("const fragShader = ctx.createShader(ctx.FRAGMENT_SHADER)")
         }
 
         // Create a shader program object to
@@ -206,10 +190,7 @@ const CpRender: React.FC<{
           ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, indexBuffer)
 
           // Get the attribute location
-          const coordAttribute = ctx.getAttribLocation(
-            shaderProgram,
-            "coordinates",
-          )
+          const coordAttribute = ctx.getAttribLocation(shaderProgram, "coordinates")
 
           // point an attribute to the currently bound VBO
           ctx.vertexAttribPointer(coordAttribute, 3, ctx.FLOAT, false, 0, 0)
@@ -312,8 +293,7 @@ const CpRender: React.FC<{
           indices[baseIndexRecord + 5] = baseVertextRecordIndex
 
           // Reading config values for the record direction used to generate vertices and colors
-          const directionIndex =
-            preCollisionRecords[i + 2] * directionConfigSize + 1
+          const directionIndex = preCollisionRecords[i + 2] * directionConfigSize + 1
 
           const blueColor = directionConfig[directionIndex]
           const dynamicX = directionConfig[directionIndex + 1]
@@ -332,15 +312,11 @@ const CpRender: React.FC<{
           vertices[baseVertexIndex + 3] = (pointX - dynamicX) / divisor
           vertices[baseVertexIndex + 4] = (pointY - dynamicY) / divisor
 
-          vertices[baseVertexIndex + 6] =
-            (pointX - dynamicX + secondX) / divisor
-          vertices[baseVertexIndex + 7] =
-            (pointY - dynamicY + secondY) / divisor
+          vertices[baseVertexIndex + 6] = (pointX - dynamicX + secondX) / divisor
+          vertices[baseVertexIndex + 7] = (pointY - dynamicY + secondY) / divisor
 
-          vertices[baseVertexIndex + 9] =
-            (dynamicX + secondX + pointX) / divisor
-          vertices[baseVertexIndex + 10] =
-            (dynamicY + secondY + pointY) / divisor
+          vertices[baseVertexIndex + 9] = (dynamicX + secondX + pointX) / divisor
+          vertices[baseVertexIndex + 10] = (dynamicY + secondY + pointY) / divisor
 
           // Set the colors for the vertecies
           colors[baseVertexIndex + 0] = redColor
@@ -362,27 +338,15 @@ const CpRender: React.FC<{
 
         // Create an empty buffer object and store vertex data
         ctx.bindBuffer(ctx.ARRAY_BUFFER, buffers.vertexBuffer)
-        ctx.bufferData(
-          ctx.ARRAY_BUFFER,
-          vertices.subarray(0, vertexLength),
-          ctx.STREAM_DRAW,
-        )
+        ctx.bufferData(ctx.ARRAY_BUFFER, vertices.subarray(0, vertexLength), ctx.STREAM_DRAW)
 
         // Create an empty buffer object and store Index data
         ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, buffers.indexBuffer)
-        ctx.bufferData(
-          ctx.ELEMENT_ARRAY_BUFFER,
-          indices.subarray(0, indexLength),
-          ctx.STREAM_DRAW,
-        )
+        ctx.bufferData(ctx.ELEMENT_ARRAY_BUFFER, indices.subarray(0, indexLength), ctx.STREAM_DRAW)
 
         // Create an empty buffer object and store color data
         ctx.bindBuffer(ctx.ARRAY_BUFFER, buffers.colorBuffer)
-        ctx.bufferData(
-          ctx.ARRAY_BUFFER,
-          colors.subarray(0, vertexLength),
-          ctx.STREAM_DRAW,
-        )
+        ctx.bufferData(ctx.ARRAY_BUFFER, colors.subarray(0, vertexLength), ctx.STREAM_DRAW)
 
         //Draw the triangle
         window.requestAnimationFrame(() => {
@@ -394,11 +358,7 @@ const CpRender: React.FC<{
         performance.mark(performanceMarkEnd)
 
         const measureName = `Draw Time for ${circleState.recursionLevel}`
-        performance.measure(
-          measureName,
-          performanceMarkStart,
-          performanceMarkEnd,
-        )
+        performance.measure(measureName, performanceMarkStart, performanceMarkEnd)
         const performanceEntries = performance.getEntriesByName(measureName)
         const latestMeasure = performanceEntries[performanceEntries.length - 1]
         console.log(
@@ -416,8 +376,7 @@ const CpRender: React.FC<{
   }, [circleState, buffers])
 
   const minWidth = Math.min(window.outerWidth, window.innerWidth)
-  const minHeight =
-    Math.min(window.outerHeight, window.innerHeight) - headerHeight
+  const minHeight = Math.min(window.outerHeight, window.innerHeight) - headerHeight
 
   return (
     <canvas

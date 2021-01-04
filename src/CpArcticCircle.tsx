@@ -81,9 +81,7 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
   // }, [])
 
   // Common state for all the UI
-  const [circleState, setCircleState] = useState<CircleState>(
-    initializeCircleState,
-  )
+  const [circleState, setCircleState] = useState<CircleState>(initializeCircleState)
 
   // Handler to start everything over
   const restart = useCallback(() => {
@@ -100,20 +98,14 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
   // Whether to highlight new points (0 = no, 1 = bright, 2 = dark)
   const [showNewPoints, setShowNewPoints] = useState<number>(0)
   const toggleShowNewPoints = useCallback(
-    () =>
-      setShowNewPoints(
-        (currentHideDrawnPoints) => (currentHideDrawnPoints + 1) % 3,
-      ),
+    () => setShowNewPoints((currentHideDrawnPoints) => (currentHideDrawnPoints + 1) % 3),
     [],
   )
 
   // Whether to highlight new conflicts (0 = no, 1 = bright, 2 = dark)
   const [showConflicts, setShowConflicts] = useState<number>(0)
   const toggleShowConflicts = useCallback(
-    () =>
-      setShowConflicts(
-        (currentShowConflicts) => (currentShowConflicts + 1) % 3,
-      ),
+    () => setShowConflicts((currentShowConflicts) => (currentShowConflicts + 1) % 3),
     [],
   )
 
@@ -147,10 +139,7 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
 
   // Loop Functionality
   const [loop, setLoop] = useState(0)
-  const toggleLoop = useCallback(
-    () => setLoop((currentLoop) => (currentLoop > 0 ? 0 : 1)),
-    [],
-  )
+  const toggleLoop = useCallback(() => setLoop((currentLoop) => (currentLoop > 0 ? 0 : 1)), [])
   useLayoutEffect(() => {
     if (loop) {
       const timeoutId = setTimeout(() => {
@@ -198,13 +187,9 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
           </button>
           {!rewind && !loop && <button onClick={performStep}>Next</button>}
 
-          {!rewind && !loop && !saveMemory && (
-            <button onClick={undo}>Undo</button>
-          )}
+          {!rewind && !loop && !saveMemory && <button onClick={undo}>Undo</button>}
           {!loop && !saveMemory && (
-            <button onClick={toggleRewind}>
-              {rewind ? "Stop Rewind" : "Start Rewind"}
-            </button>
+            <button onClick={toggleRewind}>{rewind ? "Stop Rewind" : "Start Rewind"}</button>
           )}
           {!rewind && (
             <button
@@ -223,19 +208,11 @@ const CpArcticCircle: React.FC<Record<string, never>> = () => {
             <>
               <button onClick={toggleShowNewPoints}>
                 New Records are{" "}
-                {showNewPoints === 0
-                  ? "Not Highlighted"
-                  : showNewPoints === 1
-                  ? "Bright"
-                  : "Dark"}
+                {showNewPoints === 0 ? "Not Highlighted" : showNewPoints === 1 ? "Bright" : "Dark"}
               </button>
               <button onClick={toggleShowConflicts}>
                 Conflicts are{" "}
-                {showConflicts === 0
-                  ? "Not Highlighted"
-                  : showConflicts === 1
-                  ? "Bright"
-                  : "Dark"}
+                {showConflicts === 0 ? "Not Highlighted" : showConflicts === 1 ? "Bright" : "Dark"}
               </button>
               {/* <button onClick={toggleFixStepSize}>
                 Zoom Level{" "}
