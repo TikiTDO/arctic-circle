@@ -13,6 +13,132 @@ const startingPointsNorthSouth: Array<VertexRecord> = [
   [0, -1, Direction.S],
 ]
 
+// TODO: Integrate this
+// How big a box is on the canvas
+// const stepSize =
+//   fixedStepSize ?? getCurrentStepSize(circleState.recursionLevel)
+
+// Center coordinates of the canvas
+// const originX = ctx.canvas.width / 2
+// const originY = ctx.canvas.height / 2
+
+// ctx.lineWidth = 1
+// ctx.clearRect(0, 0, canvasElement.width, canvasElement.height)
+// Draw the main boxes
+// const preCollisionRecords = circleState.preCollisionRecords
+// for (let i = 0; i < preCollisionRecords.length; i = i + 3) {
+//   renderState(
+//     ctx,
+//     originX,
+//     originY,
+//     2,
+//     preCollisionRecords[i],
+//     preCollisionRecords[i + 1],
+//     preCollisionRecords[i + 2],
+//   )
+// }
+
+// const {
+//   dataSize,
+//   getCollisionKey,
+//   getXFromCollisionKey,
+//   getYFromCollisionKey,
+// } = getRecursionHelpers(circleState.recursionLevel)
+
+// // TODO: Move into calculate
+// const extraBoxes = new Uint8Array(dataSize)
+
+// // Set 1 for every conflict box
+// if (showConflicts) {
+//   const collisionXYArray = circleState.collisionXYArray
+//   for (
+//     let collisionIndex = 0;
+//     collisionIndex < collisionXYArray.length;
+//     collisionIndex = collisionIndex + 2
+//   ) {
+//     const pointX = collisionXYArray[collisionIndex]
+//     const pointY = collisionXYArray[collisionIndex + 1]
+
+//     // This points has a collision
+//     extraBoxes[getCollisionKey(pointX, pointY)] |= 3 // 1 | 2
+
+//     // These points may itersect with a collision
+//     extraBoxes[getCollisionKey(pointX + 1, pointY)] |= 2
+//     extraBoxes[getCollisionKey(pointX - 1, pointY)] |= 2
+//     extraBoxes[getCollisionKey(pointX, pointY + 1)] |= 2
+//     extraBoxes[getCollisionKey(pointX, pointY - 1)] |= 2
+//   }
+// }
+
+// // Set 2 for every generated box
+// if (showNewPoints) {
+//   const generatedXYArray = circleState.generatedXYArray
+//   for (
+//     let generatedIndex = 0;
+//     generatedIndex < generatedXYArray.length;
+//     generatedIndex = generatedIndex + 2
+//   ) {
+//     const pointX = generatedXYArray[generatedIndex]
+//     const pointY = generatedXYArray[generatedIndex + 1]
+
+//     // This points have a new record
+//     extraBoxes[getCollisionKey(pointX, pointY)] |= 12 // 4 | 8
+
+//     // These points may itersect with a new
+//     extraBoxes[getCollisionKey(pointX + 1, pointY)] |= 8
+//     extraBoxes[getCollisionKey(pointX - 1, pointY)] |= 8
+//     extraBoxes[getCollisionKey(pointX, pointY + 1)] |= 8
+//     extraBoxes[getCollisionKey(pointX, pointY - 1)] |= 8
+//   }
+// }
+
+// // Draw all the generated boxes
+// for (let i = 0; i < extraBoxes.length; i++) {
+//   const extraBoxRecord = extraBoxes[i]
+//   if (!extraBoxRecord) {
+//     continue
+//   } else {
+//     const pointX = getXFromCollisionKey(i)
+//     const pointY = getYFromCollisionKey(i)
+
+//     if (extraBoxRecord === 3) {
+//       // Show box for only conflicts
+//       ctx.fillStyle =
+//         showConflicts === 1 ? "rgba(255,0,0,0.95)" : "rgba(60,0,0,0.7)"
+//     } else if (extraBoxRecord === 12) {
+//       // Show box for only generated
+//       ctx.fillStyle =
+//         showNewPoints === 1
+//           ? "rgba(255,255,255,0.95)"
+//           : "rgba(0,60,0,0.7)"
+//     } else if ((extraBoxRecord & 4) | (extraBoxRecord & 1)) {
+//       if (showConflicts === 1 && showNewPoints === 1) {
+//         // Both want bright
+//         ctx.fillStyle = "#9d1fb6"
+//       } else if (
+//         (showConflicts === 1 && showNewPoints === 2) ||
+//         (showConflicts === 2 && showNewPoints === 1)
+//       ) {
+//         // Both can't decide
+//         ctx.fillStyle = "#9d1fb6"
+//       } else {
+//         // Both want dark
+//         ctx.fillStyle = "#FFF"
+//       }
+//     } else {
+//       continue
+//     }
+
+//     const stepSize = 0
+//     ctx.fillRect(
+//       originX + (pointX - 1) * stepSize,
+//       originY + (pointY - 1) * stepSize,
+//       2 * stepSize,
+//       2 * stepSize,
+//     ) // Extra box
+//   }
+// }
+
 export const generateStaringPoints = (
   buffer: Int16Array,
   index: number,
