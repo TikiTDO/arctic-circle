@@ -19,6 +19,7 @@ module.exports = {
       "error",
       { multiline: { delimiter: "none" } },
     ],
+    "react/prop-types": "off",
   },
   parserOptions: {
     sourceType: "module",
